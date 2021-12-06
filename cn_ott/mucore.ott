@@ -359,6 +359,26 @@ grammar
 
 grammar
 
+  array_prop_form :: ''  ::= {{ com array property formulas }}
+    | forall </ Symbol_symi // , // i /> . form1 -> form2 :: :: Array_prop_form 
+    % TODO (+ bind </ Symbol_symi // , // i /> in form1 +) (+ bind </ Symbol_symi // , // i /> in form2 +)
+    
+  form :: 'form_' ::=
+    | /\\ ( </ formi // , // i /> ) ::  :: And
+    | \// ( </ formi // , // i /> ) ::  :: Or
+    | expr_form =< expr_form' :: :: leq
+    | expr_form = expr_form' :: :: eq
+  
+  expr_form :: 'Expr_form_' ::= 
+    | Symbol_sym                :: :: Var
+    | Z_t                       :: :: Int
+    | expr_form1 * expr_form2   :: :: Mult
+    | expr_form1 + expr_form2   :: :: Plus
+    | expr_form1 [ expr_form2 ] :: :: Index
+    % array quantified or a term in index
+
+grammar
+
   bool_op :: '' ::= {{ auxparam 'bt }}
     | neg term_aux                         ::     :: Not
     | term_aux1 = term_aux2                ::     :: Eq
@@ -420,7 +440,8 @@ grammar
   array_op :: '' ::= {{ auxparam 'bt }}
     | [ | </ term_auxi // , // i /> |] :: :: Array
     | term_aux1 [ term_aux2 ]          :: :: ArrayGet
-
+    % constant array
+    % update
 
   param_op :: '' ::= {{ auxparam 'bt }}
     | Symbol_sym : base_type . term_aux       :: :: Param
@@ -931,6 +952,10 @@ grammar
     | </ mu_pattern_auxi : base_typei ~> Ci with term_auxi // i />        :: X :: indexed_pattern
     | </ Ci ; Li ; Ni |- mu_tpexpri <= yi : base_typei . termi // i />    :: X :: indexed_check_mu_tpexpr
     | </ Ci ; Li ; Ni ; Ri |- mu_texpri <= reti // i />                   :: X :: indexed_check_mu_texpr
+    | </ Cj ; Lj | </ Symbol_symij // , // i /> |- guarded ( formj ) // j /> :: :: index_wf_guarded_form
+    | </ Cj ; Lj | </ Symbol_symij // , // i /> |- vconstr ( formj ) // j /> :: :: index_wf_vconstr_form
+    | Symbol_sym inEnv C ; L                                              ::   :: x_in_C_L
+    | Symbol_sym inEnv </ Symbol_symi // , // i />                        ::   :: x_in_Syms
 
 
 grammar
@@ -953,6 +978,142 @@ grammar
     | term_aux eq term_aux'                                           ::   :: abbreviations
     | mu_name : pure_arg eq </ xi // i /> |-> mu_tpexpr inEnv Globals ::   :: pure_func_body_in_globals
     | mu_name : arg      eq </ xi // i /> |-> mu_texpr  inEnv Globals ::   :: func_body_in_globals
+
+
+defns 
+  wf_jtyp :: 'Wf_' ::=
+
+  defn
+    C ; L |- guarded_e ( expr_form ) :: :: Guarded_Eexpr :: Guarded_Eexpr_ by
+
+    Symbol_sym inEnv C ; L
+    --------------------------------- :: EVar
+    C ; L |- guarded_e ( Symbol_sym )
+
+
+    Symbol_sym inEnv C ; L
+    --------------------------------------- :: Scaled_EVar
+    C ; L |- guarded_e ( Z_t * Symbol_sym )
+
+
+    C ; L |- guarded_e ( expr_form1 )
+    C ; L |- guarded_e ( expr_form2 )
+    ---------------------------------------------- :: Plus
+    C ; L |- guarded_e ( expr_form1 + expr_form2 )
+
+  defn 
+    C ; L | </ Symbol_symi // , // i /> |- guarded ( expr_form ) :: :: Guarded_Expr :: Guarded_Expr_ by
+
+
+    C ; L |- guarded_e ( expr_form  )
+    -------------------------------------------------------- :: Eexpr
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form  )
+
+
+    Symbol_sym inEnv </ Symbol_symi // i  />
+    ---------------------------------------------------------------------- :: UVar
+    C ; L | </ Symbol_symi // i /> |- guarded ( Symbol_sym )
+
+
+  defn
+    C ; L | </ Symbol_symi // , // i /> |- guarded ( form ) :: :: Guarded :: Guarded_ by
+
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form )
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form' )
+    ---------------------------------------------------------------------- :: Leq
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form =< expr_form' )
+
+
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form )
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form' )
+    ---------------------------------------------------------------------- :: Eq
+    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form = expr_form' )
+
+
+    </ C ; L | </ Symbol_symi // i /> |- guarded ( formj )  // j />
+    ---------------------------------------------------------------------- :: Or
+    C ; L | </ Symbol_symi // i /> |- guarded ( \// ( </ formj // j /> ) )
+
+
+    </ C ; L | </ Symbol_symi // i /> |- guarded ( formj )  // j />
+    ---------------------------------------------------------------------- :: And
+    C ; L | </ Symbol_symi // i /> |- guarded ( /\\ ( </ formj // j /> ) )
+
+
+  defn
+    C ; L |- vconstr_e ( expr_form ) :: :: Vconstr_Eexpr :: Vconstr_Eexpr_ by
+
+    Symbol_sym inEnv C ; L
+    --------------------------------- :: EVar
+    C ; L |- vconstr_e ( Symbol_sym )
+
+
+    Symbol_sym inEnv C ; L
+    --------------------------------------- :: Scaled_EVar
+    C ; L |- vconstr_e ( Z_t * Symbol_sym )
+
+
+    C ; L |- vconstr_e ( expr_form1 )
+    C ; L |- vconstr_e ( expr_form2 )
+    ---------------------------------------------- :: Plus
+    C ; L |- vconstr_e ( expr_form1 + expr_form2 )
+
+
+    Symbol_sym inEnv C ; L
+    C ; L |- vconstr_e ( expr_form )
+    ---------------------------------------------- :: Index
+    C ; L |- vconstr_e ( Symbol_sym [ expr_form ] )
+
+
+  defn
+    C ; L | </ Symbol_symi // , // i /> |- vconstr ( expr_form ) :: :: Vconstr_Expr :: Vconstr_Expr_ by
+
+
+    C ; L |- vconstr_e ( expr_form  )
+    -------------------------------------------------------- :: Eexpr
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form  )
+
+
+    Symbol_sym inEnv C ; L
+    Symbol_sym' inEnv </ Symbol_symi // i  />
+    ------------------------------------------------------------------------ :: Index_UVar
+    C ; L | </ Symbol_symi // i /> |- vconstr ( Symbol_sym [ Symbol_sym' ] )
+
+
+  defn
+    C ; L | </ Symbol_symi // , // i /> |- vconstr ( form ) :: :: Vconstr :: Vconstr_ by
+
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form )
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form' )
+    ---------------------------------------------------------------------- :: Leq
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form =< expr_form' )
+
+
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form )
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form' )
+    ---------------------------------------------------------------------- :: Eq
+    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form = expr_form' )
+
+
+    </ C ; L | </ Symbol_symi // i /> |- vconstr ( formj )  // j />
+    ---------------------------------------------------------------------- :: Or
+    C ; L | </ Symbol_symi // i /> |- vconstr ( \// ( </ formj // j /> ) )
+
+
+    </ C ; L | </ Symbol_symi // i /> |- vconstr ( formj )  // j />
+    ---------------------------------------------------------------------- :: And
+    C ; L | </ Symbol_symi // i /> |- vconstr ( /\\ ( </ formj // j /> ) )
+
+
+  defn
+    C ; L |- well_formed ( array_prop_form ) :: :: Apf :: Apf_ by
+
+
+    C ; L | </ Symbol_symi // i /> |- guarded ( form1 )
+    C ; L | </ Symbol_symi // i /> |- vconstr ( form2 )
+    ----------------------------------------------------------------------- :: Base
+    C ; L |- well_formed ( forall </ Symbol_symi // i /> . form1 -> form2 )
+
 
 defns
   lemma_jtype :: '' ::=
@@ -2404,5 +2565,3 @@ defns
     <( h ; mu_is_texpr_aux )> --> <( h' ; mu_texpr )>
     ------------------------------------------------ :: Is
     <( h ; mu_is_texpr_aux )> --> <( h' ; mu_texpr )>
-
-
