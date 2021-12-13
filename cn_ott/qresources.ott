@@ -1,0 +1,83 @@
+% can this synthesise?
+pt = t1 |--ct-n-array--> t2
+C L N R |- res <= pt
+---------------------------------------------------------------------------
+C L N R |- explode ( res : pt ) <= *S x . 0 <= x < n ; t1 + x * sizeof( ct ) |--ct--> t2 [ x ]
+
+
+% only sound if explode is the ONLY way of creating a qpt?
+% illegal in C otherwise, but should be caught by earlier Cerberus/C-mem-model?
+qpt = *S x . iguard ; t1 + x * sizeof( ct ) |--ct--> t2
+C L N R |- res <= qpt
+smt ( N =>  iguard <--> 0 <= x < n )
+smt ( N => t1 = t1' )
+smt ( N , x : int , iguard => t2 = t2' [ x ]) % x is free in t2
+---------------------------------------------------
+C L N R |- implode ( res : qpt , n ) <= t1' |--ct-n-array-- > t2'
+
+
+% pattern matching/destruction judgement
+% make sure pattern matching is SYNTAX not type directed
+% make sure proofs are SYNTAX
+% what if t1 = constant 0
+C L N R |- res <= qpt
+qpt = *S x . iguard ; t1 |--ct--> t2
+smt ( N => [ k / x] iguard )
+qpt' = *S x . x <> k && iguard ; t1 |--ct--> t2
+pt = [ k / x ] t1 |--ct--> [ k / x] t2
+% k = ([0/x] t1 - [k/x] t1) / sizeof(ct)
+----------------------------------------------------------
+C L N R |- qpt' *s pt : break_at ( res : qpt , k ) ~> { qpt' , pt } % resource context
+
+% option 1: pointwise equivalent, requires annotation
+CLN R1 |- res_qpt' <= qpt'
+CLN R2 |- res_pt   <= pt
+qpt' = *S x . iguard' ; t1' + x * sizeof( ct ) |--ct--> t2'
+pt = t1'' |--ct--> t2''
+qpt = *S x . iguard ; t1 + x * sizeof( ct ) |--ct--> t2
+% can't be xor
+% iguard = 0 <= x < 3, x = 1, iguard' = x <> 1 && 0 <= x < 3
+% k = 2, x = 15 so 0 <= 15 < 3 <--> 15 = 2 \/ 0 <= 15 < 3
+% does this check need to exist? probably not
+% 1a. smt ( N , iguard => x <> k )
+% 1b. smt ( N => iguard <--> x = k \/ iguard' )
+2. smt ( N , x = k => ( t1 + x * sizeof ( ct ) = t1'' ) /\ ( [ k / x ] t2 = [ k / x ] t2'' ) )
+3. smt ( N , iguard' =>  t1 = t1' /\ t2 = t2' ) % x free
+% could skip smt calls if shape of pt restricted to that created by break e.g.
+% qpt' = *S x . x <> k && iguard ; t1 + x * sizeof( ct ) |- ct -> t2 [ x ]
+% pt = t1 + k * sizeof( ct ) |- ct -> t2 [ k ]
+-------------------------------------------------------------
+CLN R1 R2 |- r_qpt : join ( res_qpt' : qpt' , res_pt : pt , k ) ~> { r_qpt }
+
+% option 2: compose
+qpt' = *S x . iguard' ; t1' + x * sizeof( ct ) |- ct -> t2'
+pt = t1'' |- ct -> t2''
+qpt = *S x . x = k \/ iguard' ; if x = k then t1'' else ( t1 + x * sizeof( ct ) ) |- ct -> if x = k then t2'' else t2'
+smt ( N , iguard => x <> k ) % for disjointness
+-------------------------------------------------------------
+N |- qpt : join ( qpt' , pt , k ) ~> { qpt }
+
+% and similarly for qpts as a whole...
+qpt = *S x . iguard ; t1 + x * sizeof( ct ) |- ct -> t2
+qpt1 = *S x . iguard /\ iguard ; t1 + x * sizeof( ct ) |- ct -> t2
+qpt2 = *S x . iguard /\ ¬ iguard ; t1 + x * sizeof( ct ) |- ct -> t2
+----------------------------------------------------------
+split( qpt1 , qpt2 ) = split ( qpt1 , iguard ) ~> { qpt1 , qpt2 }
+
+% option 1: pointwise equivalent, ^ = xor, requires annotation
+qpt1 = *S x . iguard1 ; t11 + x * sizeof( ct ) |- ct -> t21
+qpt2 = *S x . iguard2 ; t12 + x * sizeof( ct ) |- ct -> t22
+qpt = *S x . iguard ; t1 + x * sizeof( ct ) |- ct -> t2
+1. smt ( N => iguard <--> iguard1 \/ iguard2 )
+2. smt ( N , iguard1 => ( t1 <--> t11 ) /\ ( t2 <--> t21 ) )
+3. smt ( N , iguard2 =>  ( t1 <--> t12 /\ t2 <--> t22 )
+-------------------------------------------------------------
+N |- join qpt = join ( qpt1 , qpt2 ) ~> { qpt }
+
+% option 2: similar for combining qpt1 and qpt2
+qpt1 = *S x . iguard1 ; t11 + x * sizeof( ct ) |- ct -> t21
+qpt2 = *S x . iguard2 ; t12 + x * sizeof( ct ) |- ct -> t22
+qpt = *S x . iguard1 ^ iguard2 ; (if iguard1 then t11 else t12) + x * sizeof( ct ) |- ct -> (if iguard1 then t21 else t22 )
+smt ( N => iguard1 ^ iguard2 ) % for disjointness
+-------------------------------------------------------------
+N |- join qpt = join ( qpt1 , qpt2 ) ~> { qpt }

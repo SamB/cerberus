@@ -4,6 +4,7 @@
 
 embed {{ tex-preamble
 \geometry{landscape}
+\usepackage{mathabx}
 \renewcommand{\[[TEX_NAME_PREFIX]]kw}[1]{ \texttt{#1} }
 \renewcommand{\[[TEX_NAME_PREFIX]]drule}[4][]{ {\displaystyle\frac{\begin{array}{l}#2\end{array} }{#3}\quad\[[TEX_NAME_PREFIX]]drulename{#4} }\\[\baselineskip] }
 }}
@@ -15,35 +16,41 @@ metavar ident , x , y , yp {{ tex { y_p } }} , yf {{ tex { y_f } }} , _ , abbrev
 
 indexvar n , i , j ::= {{ phantom }} {{ com index variables }}
 
-
 grammar
 
   Sctypes_t , ct {{ tex \tau }} :: '' ::= {{ ocaml Sctypes.t }} {{ phantom }} {{ com C type }}
-    | ct *s :: :: Pointer {{ com pointer to type $[[ct]]$ }}
+    | array ty_int ct :: :: ArrayCt {{ com array of length $[[ty_int]]$ of element type $[[ct]]$ }}
+    | ct *s           :: :: Pointer {{ com pointer to type $[[ct]]$ }}
 
 
 grammar
+
+  ty_int {{ tex int }} , _int {{ tex \_ }} :: 'Int_' ::=   {{ ocaml int  }} {{ phantom }} {{ com OCaml fixed-width integer }}
+    | i     ::   :: IndexVar {{ com literal integer }}
+    | n     ::   :: ArrayLen {{ com literal integer }}
+    | i_one :: X :: One      {{ tex 1               }}
+
 
   ty_tag {{ tex tag }} :: 'Ty_tag' ::= {{ ocaml tag }} {{ phantom }} {{ com OCaml type for struct/union tag }}
     | ident :: :: ident
 
 
   base_type {{ tex \beta }} , _bt {{ tex \_ }} :: '' ::= {{ com base types }}
-    | unit                                       ::   :: Unit     {{ com unit              }}
-    | bool                                       ::   :: Bool     {{ com boolean           }}
-    | integer                                    ::   :: Integer  {{ com integer           }}
-    | real                                       ::   :: Read     {{ com rational numbers? }}
-    | loc                                        ::   :: Loc      {{ com location          }}
-    | array base_type                            ::   :: ArrayTy  {{ com array             }}
-    | list base_type                             ::   :: ListTy   {{ com list              }}
-    | </ base_typei // * // i />                 ::   :: TupleTy  {{ com tuple             }}
-    | struct ty_tag                              ::   :: Struct   {{ com struct            }}
-    | set base_type                              ::   :: Set      {{ com set               }}
-    | opt ( base_type )                          ::   :: Option   {{ com option            }}
-    | base_type -> base_type'                    ::   :: ParamTy  {{ com parameter types   }}
-    | to_base ( ct )                             :: M :: Of_Ctype {{ com of a C type       }}
-                                                                  {{ tex \beta_{ [[ct]] }  }}
-                                                                  {{ ocaml (BT.of_sct ( [[ct]] ) ) }}
+    | unit                       ::   :: Unit     {{ com unit              }}
+    | bool                       ::   :: Bool     {{ com boolean           }}
+    | integer                    ::   :: Integer  {{ com integer           }}
+    | real                       ::   :: Read     {{ com rational numbers? }}
+    | loc                        ::   :: Loc      {{ com location          }}
+    | array base_type            ::   :: ArrayTy  {{ com array             }}
+    | list base_type             ::   :: ListTy   {{ com list              }}
+    | </ base_typei // * // i /> ::   :: TupleTy  {{ com tuple             }}
+    | struct ty_tag              ::   :: Struct   {{ com struct            }}
+    | set base_type              ::   :: Set      {{ com set               }}
+    | opt ( base_type )          ::   :: Option   {{ com option            }}
+    | base_type -> base_type'    ::   :: ParamTy  {{ com parameter types   }}
+    | to_base ( ct )             :: M :: Of_Ctype {{ com of a C type       }}
+                                                  {{ tex \beta_{ [[ct]] }  }}
+                                                  {{ ocaml (BT.of_sct ( [[ct]] ) ) }}
 
 
 grammar
@@ -310,8 +317,8 @@ grammar
 grammar
 
   Z_t {{ tex z }} :: 'Z_' ::= {{ ocaml Z.t }} {{ phantom }} {{ com OCaml arbitrary-width integer }}
-    | z_one                       :: X M :: One        {{ ocaml Z.one  }} {{ tex 1                     }}
-    | z_zero                      :: X M :: Zero       {{ ocaml Z.zero }} {{ tex 0                     }}
+    | z_one                       :: X M :: One      {{ ocaml Z.one  }} {{ tex 1                     }}
+    | z_zero                      :: X M :: Zero     {{ ocaml Z.zero }} {{ tex 0                     }}
     | i                           :: M :: of_index   {{ ocaml OF_INDEX [[i]]                         }}
                                                      {{ com literal integer                          }}
     | to_int ty_mem_int           :: M :: of_mem_ptr {{ ocaml Memory.integer_value_to_num            }}
@@ -335,9 +342,10 @@ grammar
 
 grammar
 
-  rational {{ tex \mathbb{Q} }} , q , _q {{ tex \_ }} :: 'Q_' ::= {{ ocaml ( int * int ) }} {{ phantom }} {{ com OCaml type for rational numbers }}
-    | q_one             :: X :: One  {{ ocaml (1, 1) }} {{ tex 1 }}
-    | ty_int1 / ty_int2 ::   :: Frac {{ ocaml ( [[ty_int1]], [[ty_int2]] ) }} {{ tex \frac{[[ty_int1]]}{[[ty_int2]]} }}
+% TODO OCaml output for this
+  rational {{ tex \mathbb{Q} }} , q , _q {{ tex \_ }} :: 'Q_' ::= {{ phantom }} {{ com OCaml type for rational numbers }}
+    | q_one             :: X :: One  {{ tex 1 }}
+    | ty_int1 / ty_int2 ::   :: Frac {{ tex \frac{[[ty_int1]]}{[[ty_int2]]} }}
 
 
 grammar
@@ -356,28 +364,13 @@ grammar
     | Symbol_sym     :: :: Symbol (+ binders = Symbol_sym +)
     | mu_pattern_aux :: :: Pat    (+ binders = binders(mu_pattern_aux) +)
 
-
 grammar
 
-  array_prop_form :: ''  ::= {{ com array property formulas }}
-    | forall </ Symbol_symi // , // i /> . form1 -> form2 :: :: Array_prop_form 
-    % TODO (+ bind </ Symbol_symi // , // i /> in form1 +) (+ bind </ Symbol_symi // , // i /> in form2 +)
-    
-  form :: 'form_' ::=
-    | /\\ ( </ formi // , // i /> ) ::  :: And
-    | \// ( </ formi // , // i /> ) ::  :: Or
-    | expr_form =< expr_form' :: :: leq
-    | expr_form = expr_form' :: :: eq
   
-  expr_form :: 'Expr_form_' ::= 
-    | Symbol_sym                :: :: Var
-    | Z_t                       :: :: Int
-    | expr_form1 * expr_form2   :: :: Mult
-    | expr_form1 + expr_form2   :: :: Plus
-    | expr_form1 [ expr_form2 ] :: :: Index
-    % array quantified or a term in index
+  array_prop :: 'Array_prop'  ::= {{ com array property formulas }}
+    | forall </ Symbol_symi // , // i /> . term_aux1 -> term_aux2 :: :: Base (+ bind </ Symbol_symi // i /> in term_aux1 +)
+                                                                             (+ bind </ Symbol_symi // i /> in term_aux2 +)
 
-grammar
 
   bool_op :: '' ::= {{ auxparam 'bt }}
     | neg term_aux                         ::     :: Not
@@ -387,6 +380,7 @@ grammar
     | \// ( </ term_auxi // , // i />    ) ::     :: Or
     | term_aux1 /\ term_aux2               :: X M :: And_Binary {{ ocaml And ( [ [[term_aux1]] , [[term_aux2]] ] ) }}
     | term_aux1 \/ term_aux2               :: X M :: Or_Binary {{ ocaml Or ( [ [[term_aux1]] , [[term_aux2]] ] ) }}
+    | array_prop                           ::     :: Array_prop
     | term_aux1 ' bool_binop ' term_aux2   ::   M :: Bool_binop
       {{ tex [[term_aux1]] [[bool_binop]] [[term_aux2]] }}
       {{ ocaml BOOL_BINOP_TO_BOOL_OP [[term_aux1]] [[bool_binop]] [[term_aux2]] }}
@@ -438,10 +432,10 @@ grammar
 
 
   array_op :: '' ::= {{ auxparam 'bt }}
-    | [ | </ term_auxi // , // i /> |] :: :: Array
-    | term_aux1 [ term_aux2 ]          :: :: ArrayGet
-    % constant array
-    % update
+    | [ | </ term_auxi // , // i /> |]     :: :: Array
+    | term_aux1 [ term_aux2 ]              :: :: ArrayGet
+    | const term_aux                       :: :: Const
+    | term_aux1 [ term_aux2 ] := term_aux3 :: :: Update
 
   param_op :: '' ::= {{ auxparam 'bt }}
     | Symbol_sym : base_type . term_aux       :: :: Param
@@ -458,7 +452,7 @@ grammar
     | alignedI ( term_aux1 , term_aux2 ) :: :: AlignedI
 
 
-  term , _t {{ tex \_ }} :: '' ::= {{ auxparam 'bt }}
+  term , _t {{ tex \_ }} , iguard :: '' ::= {{ auxparam 'bt }}
     | lit        :: :: Lit
     | arith_op   :: :: Arith_op
     | bool_op    :: :: Bool_op
@@ -548,11 +542,6 @@ grammar
     | false                 ::   :: False {{ ocaml false }}
 
 
-  ty_int {{ tex int }} , _int {{ tex \_ }} :: 'Int_' ::=   {{ ocaml int  }} {{ phantom }} {{ com OCaml fixed-width integer }}
-    | i     ::   :: IndexVar {{ com literal integer }}
-    | i_one :: X :: One      {{ tex 1               }}
-
-
 metavar Symbol_prefix {{ tex }} ::= {{ ocaml Symbol.prefix }} {{ phantom }}
   {{ com Ott-hack, ignore (OCaml Symbol.prefix) }}
 
@@ -565,16 +554,38 @@ metavar Linux_linux_memory_order {{ tex linux\_mem\_order }} ::= {{ ocaml Linux.
 
 grammar
 
+  points_to , pt :: '' ::= {{ ocaml type point = { ct = Sctypes.t; pointer: IT.t; perm : IT.t; init: O.t; value: IT.t; } }}
+                           {{ phantom }} {{ com points-to separation logic predicate }}
+    | term_aux1 |- init_t - ct -> term_aux2 :: :: Points_to
+      % Omitting rational/perm until fractional permissions are used (2021-06)
+      {{ tex [[term_aux1]] \mathbin{ { \overset{ [[init_t]] }{ \mapsto } }_{ [[ct]] } } [[term_aux2]] }}
+      {{ ocaml { ct = [[ct]] ; pointer = [[term_aux1]] ; perm = IT.true ; init = [[init_t]] ;  value = [[term_aux2]] ; } }}
+
+
+  qpoints_to, qpt :: '' ::= {{ ocaml type qpoint = type qpoint = { ct: Sctypes.t; pointer: IT.t; q: Sym.t; permission: IT.t; value: O.t; init: O.t; } }}
+                            {{ phantom }} {{ com quantified (integer-indexed) points-to seperation logic predicate }}
+    | *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2 :: :: Qpoints_to
+      {{ tex [[*S]] [[x]] [[.]] [[iguard]] ; [[term_aux1]] + x \times \mathrm{size\_of}( [[ct]] ) \mathbin{ { \overset{ [[init_t]] }{ \mapsto } }_{ [[ct]] } } [[term_aux2]] }}
+      {{ ocaml { ct = [[ct]] ; pointer = [[term_aux1]] ; q = [[x]]; permission = [[iguard]] ; init = [[init_t]] ;  value = [[term_aux2]] ; } }}
+
+
+grammar
+
   res_term :: 'ResT_' ::= {{ com resource terms }}
-    | emp                             ::   :: Empty    {{ com empty heap                            }}
-    | points_to                       ::   :: PointsTo {{ com single-cell heap                      }}
-    | Symbol_sym                      ::   :: Var      {{ com variable                              }}
-    | <( res_term1 , res_term2 )>     ::   :: SepPair  {{ com seperating-conjunction pair           }}
-    | pack ( mu_pval_aux , res_term ) ::   :: Pack     {{ com packing for existentials              }}
-    | fold ( res_term )               ::   :: Fold     {{ com fold into recursive res. pred.        }}
-    |               [ subs ] res_term :: M :: Subs     {{ com substitution for resource terms       }}
-                                                       {{ tex [[subs]] ( [[res_term]] )             }}
-                                                       {{ ocaml RES_TERM_SUBS [[subs]] [[res_term]] }}
+    | emp                                          ::   :: Empty      {{ com empty heap                                          }}
+    | points_to                                    ::   :: Points_to  {{ com single-cell heap                                    }}
+    | qpoints_to                                   ::   :: Qpoints_to {{ com contiguous-cell heap                                }}
+    | Symbol_sym                                   ::   :: Var        {{ com variable                                            }}
+    | <( res_term1 , res_term2 )>                  ::   :: SepPair    {{ com seperating-conjunction pair                         }}
+    | pack ( mu_pval_aux , res_term )              ::   :: Pack       {{ com packing for existentials                            }}
+    | fold ( res_term )                            ::   :: Fold       {{ com fold into recursive res. pred.                      }}
+    | explode ( res_term : pt )                    ::   :: Explode    {{ com transform points-to-array into quantified points-to }}
+    | implode ( res_term : qpt , ty_int )          ::   :: Implode    {{ com transform quantified points-to into points-to-array }}
+    | break ( res_term : qpt , ty_int )            ::   :: Break      {{ com split a qpt into a qpt and a pt                     }}
+    | glue ( res_term1 : qpt , res_term2 : pt )    ::   :: Join       {{ com join a qpt and a pt into a qpt                      }}
+    |                            [ subs ] res_term :: M :: Subs       {{ com substitution for resource terms                     }}
+                                                                      {{ tex [[subs]] ( [[res_term]] )                           }}
+                                                                      {{ ocaml RES_TERM_SUBS [[subs]] [[res_term]]               }}
 
 
 grammar
@@ -684,26 +695,18 @@ grammar
 
 grammar
 
-  init_t {{ tex init }} , _i {{ tex }} :: '' ::= {{ ocaml bool }} {{ phantom }} {{ com initialisation status }}
-    | tick :: :: init   {{ ocaml true  }}                     {{ com initialised  }}
-    |  *   :: :: uninit {{ ocaml false }} {{ tex { [[*]] } }} {{ com uninitalised }}
-
-
-grammar
-
-  points_to , pt :: '' ::= {{ ocaml type points_to = { pointer: 'bt term; perm : int * int; init: bool; ct = Sctypes.t; pointee : 'bt term; } }}
-                      {{ phantom }} {{ com points-to separation logic predicate }}
-    | term_aux1 ( rational )|- init_t - ct -> term_aux2 :: :: Points_to
-      % Omitting [[rational]] until fractional permissions are used (2021-06)
-      {{ tex [[term_aux1]] \mathbin{ { \overset{ [[init_t]] }{ \mapsto } }_{ [[ct]] } } [[term_aux2]] }}
-      {{ ocaml { pointer = [[term_aux1]] ; perm = [[rational]] ; init = [[init_t]] ; ct = [[ct]] ; pointee = [[term_aux2]] ; } }}
+  % TODO correct OCaml output for this
+  init_t {{ tex init }} , _i {{ tex }} :: '' ::= {{ phantom }} {{ com initialisation status }}
+    | tick :: :: init                       {{ com initialised  }}
+    |  *   :: :: uninit {{ tex { [[*]] } }} {{ com uninitalised }}
 
 
 grammar
 
   res :: 'Res_' ::= {{ com resources }}
     | emp                                 ::   :: Empty     {{ com empty heap             }}
-    | points_to                           ::   :: Points_to {{ com points-top heap pred.  }}
+    | points_to                           ::   :: Points_to {{ com points-to heap pred.  }}
+    | qpoints_to                          ::   :: Qpoints_to {{ com quantified (integer-indexed) points-to heap pred. }}
     | res1 *s res2                        ::   :: SepConj   {{ com seperating conjunction }}
     | exists Symbol_sym : base_type . res ::   :: Exists    {{ com existential            }}
     | term_aux /\ res                     ::   :: TermConj  {{ com logical conjuction     }}
@@ -809,7 +812,7 @@ grammar
     | [ subs ] mu_texpr :: M :: Subs  {{ ocaml MU_TEXPR_SUBS [[subs]] [[mu_texpr]] }} {{ tex [[subs]] ( [[mu_texpr]] ) }}
                                       {{ com simul-sub $[[subs]]$ in $[[mu_texpr]]$   }}
 
-% TODO substitutions
+% TODO generate substitutions
 
 grammar
 
@@ -830,6 +833,7 @@ grammar
     | sigma  :: :: sigma     {{ tex \Sigma                           }}
     | exists :: :: exists    {{ tex \exists                          }}
     | *s     :: :: ast       {{ tex *                                }}
+    | *S     :: :: bigAst    {{ tex \Asterisk                        }}
     | *o     :: :: otimes    {{ tex \otimes                          }}
     | *      :: :: times     {{ tex \times                           }}
     | /\     :: :: and       {{ tex \wedge                           }}
@@ -942,20 +946,20 @@ grammar
 grammar
 
   typing :: 'typing_' ::=
-    | smt ( N => term_aux )                                               ::   :: smt
-    | Symbol_sym : base_type inEnv C                                      ::   :: x_in_C
-    | Symbol_sym : base_type inEnv L                                      ::   :: x_in_L
-    | struct ty_tag & </ Symbol_identifieri : T_cti // i /> inEnv Globals ::   :: struct_in_globals
-    | a eq </ xi : base_typei // , // i /> |-> res inEnv Globals          ::   :: rec_res_pred_in_globals       {{ com recursive resource predicate }}
-    | </ Ci ; Li ; Ni |- ty_mem_valuei => mem base_typei // i />          ::   :: indexed_infer_mem_value       {{ com dependent on memory object model }}
-    | </ Ci ; Li ; Ni |- mu_pval_auxi => base_typei // i />               :: X :: index_infer_mu_pval
-    | </ mu_pattern_auxi : base_typei ~> Ci with term_auxi // i />        :: X :: indexed_pattern
-    | </ Ci ; Li ; Ni |- mu_tpexpri <= yi : base_typei . termi // i />    :: X :: indexed_check_mu_tpexpr
-    | </ Ci ; Li ; Ni ; Ri |- mu_texpri <= reti // i />                   :: X :: indexed_check_mu_texpr
-    | </ Cj ; Lj | </ Symbol_symij // , // i /> |- guarded ( formj ) // j /> :: :: index_wf_guarded_form
-    | </ Cj ; Lj | </ Symbol_symij // , // i /> |- vconstr ( formj ) // j /> :: :: index_wf_vconstr_form
-    | Symbol_sym inEnv C ; L                                              ::   :: x_in_C_L
-    | Symbol_sym inEnv </ Symbol_symi // , // i />                        ::   :: x_in_Syms
+    | smt ( N => term_aux )                                                      ::   :: smt
+    | Symbol_sym : base_type inEnv C                                             ::   :: x_in_C
+    | Symbol_sym : base_type inEnv L                                             ::   :: x_in_L
+    | struct ty_tag & </ Symbol_identifieri : T_cti // i /> inEnv Globals        ::   :: struct_in_globals
+    | a eq </ xi : base_typei // , // i /> |-> res inEnv Globals                 ::   :: rec_res_pred_in_globals       {{ com recursive resource predicate }}
+    | </ Ci ; Li ; Ni |- ty_mem_valuei => mem base_typei // i />                 ::   :: indexed_infer_mem_value       {{ com dependent on memory object model }}
+    | </ Ci ; Li ; Ni |- mu_pval_auxi => base_typei // i />                      :: X :: index_infer_mu_pval
+    | </ mu_pattern_auxi : base_typei ~> Ci with term_auxi // i />               :: X :: indexed_pattern
+    | </ Ci ; Li ; Ni |- mu_tpexpri <= yi : base_typei . termi // i />           :: X :: indexed_check_mu_tpexpr
+    | </ Ci ; Li ; Ni ; Ri |- mu_texpri <= reti // i />                          :: X :: indexed_check_mu_texpr
+    | </ Cj ; Lj | </ Symbol_symij // , // i /> |- guarded ( term_auxj ) // j /> ::   :: index_wf_guarded_form
+    | </ Cj ; Lj | </ Symbol_symij // , // i /> |- vconstr ( term_auxj ) // j /> ::   :: index_wf_vconstr_form
+    | Symbol_sym inEnv C ; L                                                     ::   :: x_in_C_L
+    | Symbol_sym inEnv </ Symbol_symi // , // i />                               ::   :: x_in_Syms
 
 
 grammar
@@ -975,7 +979,8 @@ grammar
     | typing                                                          ::   :: typing
     | opsem                                                           ::   :: opsem
     % both
-    | term_aux eq term_aux'                                           ::   :: abbreviations
+    | res eq res'                                                     ::   :: abbrev_res
+    | term_aux eq term_aux'                                           ::   :: abbrev_term
     | mu_name : pure_arg eq </ xi // i /> |-> mu_tpexpr inEnv Globals ::   :: pure_func_body_in_globals
     | mu_name : arg      eq </ xi // i /> |-> mu_texpr  inEnv Globals ::   :: func_body_in_globals
 
@@ -984,7 +989,7 @@ defns
   wf_jtyp :: 'Wf_' ::=
 
   defn
-    C ; L |- guarded_e ( expr_form ) :: :: Guarded_Eexpr :: Guarded_Eexpr_ by
+    C ; L |- guarded_e ( term_aux ) :: :: Guarded_Eexpr :: Guarded_Eexpr_ by
 
     Symbol_sym inEnv C ; L
     --------------------------------- :: EVar
@@ -996,18 +1001,18 @@ defns
     C ; L |- guarded_e ( Z_t * Symbol_sym )
 
 
-    C ; L |- guarded_e ( expr_form1 )
-    C ; L |- guarded_e ( expr_form2 )
+    C ; L |- guarded_e ( term_aux1 )
+    C ; L |- guarded_e ( term_aux2 )
     ---------------------------------------------- :: Plus
-    C ; L |- guarded_e ( expr_form1 + expr_form2 )
+    C ; L |- guarded_e ( term_aux1 + term_aux2 )
 
   defn 
-    C ; L | </ Symbol_symi // , // i /> |- guarded ( expr_form ) :: :: Guarded_Expr :: Guarded_Expr_ by
+    C ; L | </ Symbol_symi // , // i /> |- guarded ( term_aux ) :: :: Guarded_Expr :: Guarded_Expr_ by
 
 
-    C ; L |- guarded_e ( expr_form  )
+    C ; L |- guarded_e ( term_aux )
     -------------------------------------------------------- :: Eexpr
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form  )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux )
 
 
     Symbol_sym inEnv </ Symbol_symi // i  />
@@ -1016,103 +1021,63 @@ defns
 
 
   defn
-    C ; L | </ Symbol_symi // , // i /> |- guarded ( form ) :: :: Guarded :: Guarded_ by
+    C ; L | </ Symbol_symi // , // i /> |- guarded ( term_aux ) :: :: Guarded :: Guarded_ by
 
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form )
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form' )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux' )
     ---------------------------------------------------------------------- :: Leq
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form =< expr_form' )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux =< term_aux' )
 
 
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form )
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form' )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux' )
     ---------------------------------------------------------------------- :: Eq
-    C ; L | </ Symbol_symi // i /> |- guarded ( expr_form = expr_form' )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux = term_aux' )
 
 
-    </ C ; L | </ Symbol_symi // i /> |- guarded ( formj )  // j />
+    </ C ; L | </ Symbol_symi // i /> |- guarded ( term_auxj )  // j />
     ---------------------------------------------------------------------- :: Or
-    C ; L | </ Symbol_symi // i /> |- guarded ( \// ( </ formj // j /> ) )
+    C ; L | </ Symbol_symi // i /> |- guarded ( \// ( </ term_auxj // j /> ) )
 
 
-    </ C ; L | </ Symbol_symi // i /> |- guarded ( formj )  // j />
+    </ C ; L | </ Symbol_symi // i /> |- guarded ( term_auxj )  // j />
     ---------------------------------------------------------------------- :: And
-    C ; L | </ Symbol_symi // i /> |- guarded ( /\\ ( </ formj // j /> ) )
+    C ; L | </ Symbol_symi // i /> |- guarded ( /\\ ( </ term_auxj // j /> ) )
+
+
+    % EXTENSION
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux )
+    ----------------------------------------------------------- :: Neg
+    C ; L | </ Symbol_symi // i /> |- guarded ( neg term_aux )
+
+
+    % EXTENSION
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux1 )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux2 )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux3 )
+    ---------------------------------------------------------------------------------------- :: ITE
+    C ; L | </ Symbol_symi // i /> |- guarded ( if term_aux1 then term_aux2 else term_aux3 )
+
+   % Symbol_sym inEnv C ; L
+   % C ; L |- vconstr_e ( term_aux )
+   % ---------------------------------------------- :: Index
+   % C ; L |- vconstr_e ( Symbol_sym [ term_aux ] )
+   % 
+   % 
+   % Symbol_sym inEnv C ; L
+   % Symbol_sym' inEnv </ Symbol_symi // i  />
+   % ------------------------------------------------------------------------ :: Index_UVar
+   % C ; L | </ Symbol_symi // i /> |- vconstr ( Symbol_sym [ Symbol_sym' ] )
 
 
   defn
-    C ; L |- vconstr_e ( expr_form ) :: :: Vconstr_Eexpr :: Vconstr_Eexpr_ by
-
-    Symbol_sym inEnv C ; L
-    --------------------------------- :: EVar
-    C ; L |- vconstr_e ( Symbol_sym )
+    C ; L |- well_formed ( array_prop ) :: :: Array_Prop :: Array_Prop_ by
 
 
-    Symbol_sym inEnv C ; L
-    --------------------------------------- :: Scaled_EVar
-    C ; L |- vconstr_e ( Z_t * Symbol_sym )
-
-
-    C ; L |- vconstr_e ( expr_form1 )
-    C ; L |- vconstr_e ( expr_form2 )
-    ---------------------------------------------- :: Plus
-    C ; L |- vconstr_e ( expr_form1 + expr_form2 )
-
-
-    Symbol_sym inEnv C ; L
-    C ; L |- vconstr_e ( expr_form )
-    ---------------------------------------------- :: Index
-    C ; L |- vconstr_e ( Symbol_sym [ expr_form ] )
-
-
-  defn
-    C ; L | </ Symbol_symi // , // i /> |- vconstr ( expr_form ) :: :: Vconstr_Expr :: Vconstr_Expr_ by
-
-
-    C ; L |- vconstr_e ( expr_form  )
-    -------------------------------------------------------- :: Eexpr
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form  )
-
-
-    Symbol_sym inEnv C ; L
-    Symbol_sym' inEnv </ Symbol_symi // i  />
-    ------------------------------------------------------------------------ :: Index_UVar
-    C ; L | </ Symbol_symi // i /> |- vconstr ( Symbol_sym [ Symbol_sym' ] )
-
-
-  defn
-    C ; L | </ Symbol_symi // , // i /> |- vconstr ( form ) :: :: Vconstr :: Vconstr_ by
-
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form )
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form' )
-    ---------------------------------------------------------------------- :: Leq
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form =< expr_form' )
-
-
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form )
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form' )
-    ---------------------------------------------------------------------- :: Eq
-    C ; L | </ Symbol_symi // i /> |- vconstr ( expr_form = expr_form' )
-
-
-    </ C ; L | </ Symbol_symi // i /> |- vconstr ( formj )  // j />
-    ---------------------------------------------------------------------- :: Or
-    C ; L | </ Symbol_symi // i /> |- vconstr ( \// ( </ formj // j /> ) )
-
-
-    </ C ; L | </ Symbol_symi // i /> |- vconstr ( formj )  // j />
-    ---------------------------------------------------------------------- :: And
-    C ; L | </ Symbol_symi // i /> |- vconstr ( /\\ ( </ formj // j /> ) )
-
-
-  defn
-    C ; L |- well_formed ( array_prop_form ) :: :: Apf :: Apf_ by
-
-
-    C ; L | </ Symbol_symi // i /> |- guarded ( form1 )
-    C ; L | </ Symbol_symi // i /> |- vconstr ( form2 )
-    ----------------------------------------------------------------------- :: Base
-    C ; L |- well_formed ( forall </ Symbol_symi // i /> . form1 -> form2 )
+    C ; L | </ Symbol_symi // i /> |- guarded ( term_aux1 )
+    C ; L | </ Symbol_symi // i /> |- vconstr ( term_aux2 )
+    --------------------------------------------------------------------------- :: Base
+    C ; L |- well_formed ( forall </ Symbol_symi // i /> . term_aux1 -> term_aux2 )
 
 
 defns
@@ -1246,6 +1211,10 @@ defns
     N |- term_aux1 ( q )|- init_t - ct -> term_aux2 eq term_aux'1 ( q )|- init_t - ct -> term_aux'2
 
 
+    smt ( N => ( iguard -> iguard' ) /\ ( iguard' -> iguard ) /\ ( term_aux1 = term_aux'1 ) /\ ( term_aux2 = term_aux'2 ) )
+    ----------------------------------------------------------------------------------------------------------------------------------------- :: QPointsTo
+    N |- *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2 eq *S x . iguard' ; term_aux'1 |- init_t - ct -> term_aux'2
+
     N |- res1 eq res'1
     N |- res2 eq res'2
     ------------------------------------ :: SepConj
@@ -1288,6 +1257,12 @@ defns
     C ; L ; N ; cdot , _ : points_to |- points_to' <= points_to''
 
 
+    N |- qpoints_to  eq qpoints_to'
+    N |- qpoints_to' eq qpoints_to''
+    ---------------------------------------------------------------- :: QPointsTo
+    C ; L ; N ; cdot , _ : qpoints_to |- qpoints_to' <= qpoints_to''
+
+
     N |- res1' = strip_ifs ( res1 )
     N |- res2' = strip_ifs ( res2 )
     N |- res1' eq res2'
@@ -1322,6 +1297,44 @@ defns
     ------------------------------------------------------------------- :: Fold
     C ; L ; N ; R |- fold ( res_term ) <= a ( </ mu_pval_auxi // i /> )
 
+
+    % can/shoudl this synthesise?
+    pt eq term_aux1 |- init_t - array n ct -> term_aux2
+    qpt eq *S x . z_zero =< x /\ x =< n + z_one ; term_aux1 |- init_t - ct -> term_aux2 [ x ]
+    C ; L ; N ; R |- res_term <= pt
+    ----------------------------------------------------------------------------------------- :: Explode
+    C ; L ; N ; R |- explode ( res_term : pt ) <= qpt
+
+
+    % only sound if explode is the ONLY way of creating a qpt?
+    % illegal in C otherwise, but should be caught by earlier Cerberus/C-mem-model?
+    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
+    pt eq term_aux1' |- init_t - array n ct -> term_aux2'
+    iguard' = ( z_zero =< x /\ x =< n + z_one )
+    C ; L ; N ; R |- res_term <= *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
+    smt ( N => ( iguard -> iguard' ) /\ ( iguard' -> iguard ) /\ ( term_aux1 = term_aux1' ) /\ ( term_aux2 = term_aux2' [ x ] ) )
+    --------------------------------------------------------------------------- :: Implode
+    C ; L ; N ; R |- implode ( res_term : qpt , n ) <=  pt
+
+
+    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
+    qpt' eq *S x . iguard' ; term_aux1 |- init_t - ct -> term_aux2
+    pt eq term_aux1 + i * size_of ct |- init_t - ct -> [ i / x , cdot ] term2
+    smt ( N , iguard' => x ' <> ' i )
+    C ; L ; N ; R |- res_term <= qpt
+    -------------------------------------------------------------- :: Break
+    C ; L ; N ; R |- break ( res_term : qpt , i ) <= qpt' *s pt
+
+
+    qpt' eq *S x . iguard' ; term_aux1 |- init_t - ct -> term_aux'2
+    pt eq term_aux''1 |- init_t - ct -> term_aux''2
+    i eq ( term_aux''1 - term_aux1 ) / size_of ct
+    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> if x = i then term_aux''2 else term_aux'2
+    smt ( N => ( iguard -> ( iguard' \/ x = i ) ) /\ ( ( iguard' \/ x = i ) -> iguard ) )
+    C ; L ; N ; R1 |- res_term1 <= qpt'
+    C ; L ; N ; R2 |- res_term2 <= pt
+    --------------------------------------------------------------------------------- :: Glue
+    C ; L ; N ; R1 , R2 |- glue ( res_term1 : qpt' , res_term2 : pt ) <= qpt
 
   defn
     h : R :: :: Heap :: Heap_ by
@@ -1445,7 +1458,7 @@ defns
 
 
     </ C ; L ; N |- mu_pvali => base_type // i />
-    ------------------------------------------------------------- :: Ctor_Array
+    --------------------------------------------------------------------- :: Ctor_Array
     C ; L ; N |- Array ( </ mu_pvali // i /> ) => array base_type
 
 
@@ -1620,7 +1633,7 @@ defns
 
 
     </ mu_pattern_auxi : base_type ~> Ci with term_auxi // i />
-    ------------------------------------------------------------------------------------------------------- :: Array
+    -------------------------------------------------------------------------------------------------------------- :: Array
     Array ( </ mu_pattern_auxi // i /> ) : array base_type ~> </ Ci // i /> with [| </ term_auxi // i /> |]
 
 
@@ -1654,6 +1667,10 @@ defns
 
     ------------------------------ :: PointsTo
     N |- pt = strip_ifs ( pt )
+
+
+    ------------------------------ :: QpointsTo
+    N |- qpt = strip_ifs ( qpt )
 
 
     -------------------------------------------------- :: SepConj
@@ -2181,6 +2198,11 @@ defns
     res_pattern2 = res_term2 ~> subs2
     -------------------------------------------------------------------------------- :: Pair
     <( res_pattern1 , res_pattern2 )> = <( res_term1 , res_term2 )> ~> subs1 , subs2
+
+
+    % ASK (for glue as well?)
+    -------------------------------------------------------------------------------- :: Break_Doesnt_Work
+    <( res_pattern1 , res_pattern2 )> = break ( res_term : qpt ) ~> subs1 , subs2
 
 
     res_pattern = res_term ~> subs

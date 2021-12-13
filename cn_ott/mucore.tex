@@ -34,6 +34,7 @@
 \newcommand{\ottinterrule}{\\[5.0mm]}
 \newcommand{\ottafterlastrule}{\\}
 \geometry{landscape}
+\usepackage{mathabx}
 \renewcommand{\ottkw}[1]{ \texttt{#1} }
 \renewcommand{\ottdrule}[4][]{ {\displaystyle\frac{\begin{array}{l}#2\end{array} }{#3}\quad\ottdrulename{#4} }\\[\baselineskip] }
 
@@ -60,7 +61,13 @@
 
 \newcommand{\ottSctypesXXt}{
 \ottrulehead{\ottnt{Sctypes\_t}  ,\ \tau}{::=}{\ottcom{C type}}\ottprodnewline
-\ottfirstprodline{|}{\tau  *}{}{}{}{\ottcom{pointer to type $\tau$}}}
+\ottfirstprodline{|}{\ottkw{array} \, int \, \tau}{}{}{}{\ottcom{array of length $int$ of element type $\tau$}}\ottprodnewline
+\ottprodline{|}{\tau  *}{}{}{}{\ottcom{pointer to type $\tau$}}}
+
+\newcommand{\otttyXXint}{
+\ottrulehead{int  ,\ \_}{::=}{\ottcom{OCaml fixed-width integer}}\ottprodnewline
+\ottfirstprodline{|}{\ottmv{i}}{}{}{}{\ottcom{literal integer}}\ottprodnewline
+\ottprodline{|}{\ottmv{n}}{}{}{}{\ottcom{literal integer}}}
 
 \newcommand{\otttyXXtag}{
 \ottrulehead{tag}{::=}{\ottcom{OCaml type for struct/union tag}}\ottprodnewline
@@ -235,24 +242,10 @@
 \ottfirstprodline{|}{ident}{}{\textrm{binders}=ident}{}{}\ottprodnewline
 \ottprodline{|}{pattern}{}{\textrm{binders}=\textrm{binders}(pattern)}{}{}}
 
-\newcommand{\ottarrayXXpropXXform}{
-\ottrulehead{\ottnt{array\_prop\_form}}{::=}{\ottcom{array property formulas}}\ottprodnewline
-\ottfirstprodline{|}{\forall \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, . \:  \ottnt{form_{{\mathrm{1}}}}  \rightarrow  \ottnt{form_{{\mathrm{2}}}}}{}{}{}{}}
-
-\newcommand{\ottform}{
-\ottrulehead{\ottnt{form}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bigwedge  \ottsym{(} \, \ottcomp{\ottnt{form_{\ottmv{i}}}}{\ottmv{i}} \, \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\bigvee  \ottsym{(} \, \ottcomp{\ottnt{form_{\ottmv{i}}}}{\ottmv{i}} \, \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{expr\_form}  \leq  \ottnt{expr\_form'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{expr\_form}  =  \ottnt{expr\_form'}}{}{}{}{}}
-
-\newcommand{\ottexprXXform}{
-\ottrulehead{\ottnt{expr\_form}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ident}{}{}{}{}\ottprodnewline
-\ottprodline{|}{z}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{expr\_form_{{\mathrm{1}}}}  \times  \ottnt{expr\_form_{{\mathrm{2}}}}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{expr\_form_{{\mathrm{1}}}}  \ottsym{+}  \ottnt{expr\_form_{{\mathrm{2}}}}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{expr\_form_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{expr\_form_{{\mathrm{2}}}}  \ottsym{]}}{}{}{}{}}
+\newcommand{\ottarrayXXprop}{
+\ottrulehead{\ottnt{array\_prop}}{::=}{\ottcom{array property formulas}}\ottprodnewline
+\ottfirstprodline{|}{\forall \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, . \:  term_{{\mathrm{1}}}  \rightarrow  term_{{\mathrm{2}}}}{}{\textsf{bind}\; \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}}\; \textsf{in}\; term_{{\mathrm{1}}}}{}{}\ottprodnewline
+\ottbindspecprodline{}{}{}{\textsf{bind}\; \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}}\; \textsf{in}\; term_{{\mathrm{2}}}}{}{}}
 
 \newcommand{\ottboolXXop}{
 \ottrulehead{\ottnt{bool\_op}}{::=}{}\ottprodnewline
@@ -261,6 +254,7 @@
 \ottprodline{|}{term_{{\mathrm{1}}}  \rightarrow  term_{{\mathrm{2}}}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\bigwedge  \ottsym{(} \, \ottcomp{term_{\ottmv{i}}}{\ottmv{i}} \, \ottsym{)}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\bigvee  \ottsym{(} \, \ottcomp{term_{\ottmv{i}}}{\ottmv{i}} \, \ottsym{)}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{array\_prop}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ term_{{\mathrm{1}}}   \mathbin{ binop_{bool} }   term_{{\mathrm{2}}} } {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{if} \, term_{{\mathrm{1}}} \, \ottkw{then} \, term_{{\mathrm{2}}} \, \ottkw{else} \, term_{{\mathrm{3}}}}{}{}{}{}}
 
@@ -303,7 +297,9 @@
 \newcommand{\ottarrayXXop}{
 \ottrulehead{\ottnt{array\_op}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottsym{[}  \mid \, \ottcomp{term_{\ottmv{i}}}{\ottmv{i}} \, \ottsym{\mbox{$\mid$}]}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{term_{{\mathrm{1}}}  \ottsym{[}  term_{{\mathrm{2}}}  \ottsym{]}}{}{}{}{}}
+\ottprodline{|}{term_{{\mathrm{1}}}  \ottsym{[}  term_{{\mathrm{2}}}  \ottsym{]}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottkw{const} \, term}{}{}{}{}\ottprodnewline
+\ottprodline{|}{term_{{\mathrm{1}}}  \ottsym{[}  term_{{\mathrm{2}}}  \ottsym{]}  \ottsym{:=}  term_{{\mathrm{3}}}}{}{}{}{}}
 
 \newcommand{\ottparamXXop}{
 \ottrulehead{\ottnt{param\_op}}{::=}{}\ottprodnewline
@@ -321,7 +317,7 @@
 \ottprodline{|}{\ottkw{alignedI} \, \ottsym{(}  term_{{\mathrm{1}}}  \ottsym{,}  term_{{\mathrm{2}}}  \ottsym{)}}{}{}{}{}}
 
 \newcommand{\ottterm}{
-\ottrulehead{\ottnt{term}  ,\ \_}{::=}{}\ottprodnewline
+\ottrulehead{\ottnt{term}  ,\ \_  ,\ \ottnt{iguard}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{lit}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{arith\_op}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{bool\_op}}{}{}{}{}\ottprodnewline
@@ -376,18 +372,27 @@
 \ottfirstprodline{|}{\ottkw{true}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{false}}{}{}{}{}}
 
-\newcommand{\otttyXXint}{
-\ottrulehead{int  ,\ \_}{::=}{\ottcom{OCaml fixed-width integer}}\ottprodnewline
-\ottfirstprodline{|}{\ottmv{i}}{}{}{}{\ottcom{literal integer}}}
+\newcommand{\ottpointsXXto}{
+\ottrulehead{\ottnt{points\_to}  ,\ \ottnt{pt}}{::=}{\ottcom{points-to separation logic predicate}}\ottprodnewline
+\ottfirstprodline{|}{ term_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }{}{}{}{}}
+
+\newcommand{\ottqpointsXXto}{
+\ottrulehead{\ottnt{qpoints\_to}  ,\ \ottnt{qpt}}{::=}{\ottcom{quantified (integer-indexed) points-to seperation logic predicate}}\ottprodnewline
+\ottfirstprodline{|}{ \Asterisk   \ottmv{x}   . \:   \ottnt{iguard}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }{}{}{}{}}
 
 \newcommand{\ottresXXterm}{
 \ottrulehead{\ottnt{res\_term}}{::=}{\ottcom{resource terms}}\ottprodnewline
 \ottfirstprodline{|}{\ottkw{emp}}{}{}{}{\ottcom{empty heap}}\ottprodnewline
 \ottprodline{|}{\ottnt{points\_to}}{}{}{}{\ottcom{single-cell heap}}\ottprodnewline
+\ottprodline{|}{\ottnt{qpoints\_to}}{}{}{}{\ottcom{contiguous-cell heap}}\ottprodnewline
 \ottprodline{|}{ident}{}{}{}{\ottcom{variable}}\ottprodnewline
 \ottprodline{|}{\langle  \ottnt{res\_term_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{res\_term_{{\mathrm{2}}}}  \rangle}{}{}{}{\ottcom{seperating-conjunction pair}}\ottprodnewline
 \ottprodline{|}{\ottkw{pack} \, \ottsym{(}  pval  \ottsym{,}  \ottnt{res\_term}  \ottsym{)}}{}{}{}{\ottcom{packing for existentials}}\ottprodnewline
 \ottprodline{|}{\ottkw{fold} \, \ottsym{(}  \ottnt{res\_term}  \ottsym{)}}{}{}{}{\ottcom{fold into recursive res. pred.}}\ottprodnewline
+\ottprodline{|}{\ottkw{explode} \, \ottsym{(}  \ottnt{res\_term}  {:}  \ottnt{pt}  \ottsym{)}}{}{}{}{\ottcom{transform points-to-array into quantified points-to}}\ottprodnewline
+\ottprodline{|}{\ottkw{implode} \, \ottsym{(}  \ottnt{res\_term}  {:}  \ottnt{qpt}  \ottsym{,}  int  \ottsym{)}}{}{}{}{\ottcom{transform quantified points-to into points-to-array}}\ottprodnewline
+\ottprodline{|}{\ottkw{break} \, \ottsym{(}  \ottnt{res\_term}  {:}  \ottnt{qpt}  \ottsym{,}  int  \ottsym{)}}{}{}{}{\ottcom{split a qpt into a qpt and a pt}}\ottprodnewline
+\ottprodline{|}{\ottkw{glue} \, \ottsym{(}  \ottnt{res\_term_{{\mathrm{1}}}}  {:}  \ottnt{qpt}  \ottsym{,}  \ottnt{res\_term_{{\mathrm{2}}}}  {:}  \ottnt{pt}  \ottsym{)}}{}{}{}{\ottcom{join a qpt and a pt into a qpt}}\ottprodnewline
 \ottprodline{|}{ \sigma  (  \ottnt{res\_term}  ) } {\textsf{M}}{}{}{\ottcom{substitution for resource terms}}}
 
 \newcommand{\ottmuXXaction}{
@@ -467,14 +472,11 @@
 \ottfirstprodline{|}{\checkmark}{}{}{}{\ottcom{initialised}}\ottprodnewline
 \ottprodline{|}{ {  \times  } }{}{}{}{\ottcom{uninitalised}}}
 
-\newcommand{\ottpointsXXto}{
-\ottrulehead{\ottnt{points\_to}  ,\ \ottnt{pt}}{::=}{\ottcom{points-to separation logic predicate}}\ottprodnewline
-\ottfirstprodline{|}{ term_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }{}{}{}{}}
-
 \newcommand{\ottres}{
 \ottrulehead{\ottnt{res}}{::=}{\ottcom{resources}}\ottprodnewline
 \ottfirstprodline{|}{\ottkw{emp}}{}{}{}{\ottcom{empty heap}}\ottprodnewline
-\ottprodline{|}{\ottnt{points\_to}}{}{}{}{\ottcom{points-top heap pred.}}\ottprodnewline
+\ottprodline{|}{\ottnt{points\_to}}{}{}{}{\ottcom{points-to heap pred.}}\ottprodnewline
+\ottprodline{|}{\ottnt{qpoints\_to}}{}{}{}{\ottcom{quantified (integer-indexed) points-to heap pred.}}\ottprodnewline
 \ottprodline{|}{\ottnt{res_{{\mathrm{1}}}}  *  \ottnt{res_{{\mathrm{2}}}}}{}{}{}{\ottcom{seperating conjunction}}\ottprodnewline
 \ottprodline{|}{\exists \, ident  {:}  \beta  . \:  \ottnt{res}}{}{}{}{\ottcom{existential}}\ottprodnewline
 \ottprodline{|}{term  \wedge  \ottnt{res}}{}{}{}{\ottcom{logical conjuction}}\ottprodnewline
@@ -591,8 +593,8 @@
 \ottprodline{|}{\ottkw{struct} \, tag  \ \& \, \ottcomp{member_{\ottmv{i}}  {:}  \tau_{\ottmv{i}}}{\ottmv{i}} \, \in \, \ottkw{Globals}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{{ \alpha } \, \equiv \, \ottcomp{\ottmv{x_{\ottmv{i}}}  {:}  \beta_{\ottmv{i}}}{\ottmv{i}} \, \mapsto  \ottnt{res} \, \in \, \ottkw{Globals}}{}{}{}{\ottcom{recursive resource predicate}}\ottprodnewline
 \ottprodline{|}{\ottcomp{\mathcal{C}_{\ottmv{i}}  \ottsym{;}  \mathcal{L}_{\ottmv{i}}  \ottsym{;}  \Phi_{\ottmv{i}}  \vdash  mem\_val_{\ottmv{i}}  \Rightarrow \, \ottkw{mem} \, \beta_{\ottmv{i}}}{\ottmv{i}}}{}{}{}{\ottcom{dependent on memory object model}}\ottprodnewline
-\ottprodline{|}{\ottcomp{\mathcal{C}_{\ottmv{j}}  \ottsym{;}  \mathcal{L}_{\ottmv{j}}  \mid \, \ottcomp{ident_{\ottmv{i}\,\ottmv{j}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{form_{\ottmv{j}}}  \ottsym{)}}{\ottmv{j}}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottcomp{\mathcal{C}_{\ottmv{j}}  \ottsym{;}  \mathcal{L}_{\ottmv{j}}  \mid \, \ottcomp{ident_{\ottmv{i}\,\ottmv{j}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{form_{\ottmv{j}}}  \ottsym{)}}{\ottmv{j}}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottcomp{\mathcal{C}_{\ottmv{j}}  \ottsym{;}  \mathcal{L}_{\ottmv{j}}  \mid \, \ottcomp{ident_{\ottmv{i}\,\ottmv{j}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{\ottmv{j}}  \ottsym{)}}{\ottmv{j}}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottcomp{\mathcal{C}_{\ottmv{j}}  \ottsym{;}  \mathcal{L}_{\ottmv{j}}  \mid \, \ottcomp{ident_{\ottmv{i}\,\ottmv{j}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  term_{\ottmv{j}}  \ottsym{)}}{\ottmv{j}}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ident \, \in \, \mathcal{C}  \ottsym{;}  \mathcal{L}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ident \, \in \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}}}{}{}{}{}}
 
@@ -608,6 +610,7 @@
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{typing}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{opsem}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{res} \, \equiv \, \ottnt{res'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{term \, \equiv \, term'}{}{}{}{}\ottprodnewline
 \ottprodline{|}{name  {:}  \ottnt{pure\_arg} \, \equiv \, \ottcomp{\ottmv{x_{\ottmv{i}}}}{\ottmv{i}} \, \mapsto  tpexpr \, \in \, \ottkw{Globals}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{name  {:}  \ottnt{arg} \, \equiv \, \ottcomp{\ottmv{x_{\ottmv{i}}}}{\ottmv{i}} \, \mapsto  texpr \, \in \, \ottkw{Globals}}{}{}{}{}}
@@ -620,13 +623,10 @@
 
 \newcommand{\ottwfXXjtyp}{
 \ottrulehead{\ottnt{wf\_jtyp}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{form}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{form}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{well\_formed} \, \ottsym{(}  \ottnt{array\_prop\_form}  \ottsym{)}}{}{}{}{}}
+\ottfirstprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  term  \ottsym{)}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{well\_formed} \, \ottsym{(}  \ottnt{array\_prop}  \ottsym{)}}{}{}{}{}}
 
 \newcommand{\ottlemmaXXjtype}{
 \ottrulehead{\ottnt{lemma\_jtype}}{::=}{}\ottprodnewline
@@ -731,6 +731,7 @@
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
 \ottSctypesXXt\ottinterrule
+\otttyXXint\ottinterrule
 \otttyXXtag\ottinterrule
 \ottbaseXXtype\ottinterrule
 \ottbinop\ottinterrule
@@ -753,9 +754,7 @@
 \ottrational\ottinterrule
 \ottlit\ottinterrule
 \ottmuXXsymXXorXXpattern\ottinterrule
-\ottarrayXXpropXXform\ottinterrule
-\ottform\ottinterrule
-\ottexprXXform\ottinterrule
+\ottarrayXXprop\ottinterrule
 \ottboolXXop\ottinterrule
 \ottarithXXop\ottinterrule
 \ottcmpXXop\ottinterrule
@@ -772,7 +771,8 @@
 \ottmuXXtpexprXXcaseXXbranch\ottinterrule
 \ottmXXkillXXkind\ottinterrule
 \otttyXXbool\ottinterrule
-\otttyXXint\ottinterrule
+\ottpointsXXto\ottinterrule
+\ottqpointsXXto\ottinterrule
 \ottresXXterm\ottinterrule
 \ottmuXXaction\ottinterrule
 \ottpolarity\ottinterrule
@@ -784,7 +784,6 @@
 \ottresXXpattern\ottinterrule
 \ottretXXpattern\ottinterrule
 \ottinitXXt\ottinterrule
-\ottpointsXXto\ottinterrule
 \ottres\ottinterrule
 \ottret\ottinterrule
 \ottmuXXseqXXexpr\ottinterrule
@@ -848,14 +847,14 @@
 
 
 \newcommand{\ottdruleWfXXGuardedXXEexprXXPlus}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  \ottnt{expr\_form_{{\mathrm{1}}}}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  \ottnt{expr\_form_{{\mathrm{2}}}}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  term_{{\mathrm{1}}}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  term_{{\mathrm{2}}}  \ottsym{)}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  \ottnt{expr\_form_{{\mathrm{1}}}}  \ottsym{+}  \ottnt{expr\_form_{{\mathrm{2}}}}  \ottsym{)}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  term_{{\mathrm{1}}}  \ottsym{+}  term_{{\mathrm{2}}}  \ottsym{)}}{%
 {\ottdrulename{Wf\_Guarded\_Eexpr\_Plus}}{}%
 }}
 
-\newcommand{\ottdefnWfXXGuardedXXEexpr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}$}{}
+\newcommand{\ottdefnWfXXGuardedXXEexpr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  term  \ottsym{)}$}{}
 \ottusedrule{\ottdruleWfXXGuardedXXEexprXXEVar{}}
 \ottusedrule{\ottdruleWfXXGuardedXXEexprXXScaledXXEVar{}}
 \ottusedrule{\ottdruleWfXXGuardedXXEexprXXPlus{}}
@@ -863,9 +862,9 @@
 
 %% defn Guarded_Expr
 \newcommand{\ottdruleWfXXGuardedXXExprXXEexpr}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{guarded\_e} \, \ottsym{(}  term  \ottsym{)}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}}{%
 {\ottdrulename{Wf\_Guarded\_Expr\_Eexpr}}{}%
 }}
 
@@ -877,172 +876,88 @@
 {\ottdrulename{Wf\_Guarded\_Expr\_UVar}}{}%
 }}
 
-\newcommand{\ottdefnWfXXGuardedXXExpr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}$}{}
+\newcommand{\ottdefnWfXXGuardedXXExpr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}$}{}
 \ottusedrule{\ottdruleWfXXGuardedXXExprXXEexpr{}}
 \ottusedrule{\ottdruleWfXXGuardedXXExprXXUVar{}}
 \end{ottdefnblock}}
 
 %% defn Guarded
 \newcommand{\ottdruleWfXXGuardedXXLeq}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form'}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term'  \ottsym{)}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  \leq  \ottnt{expr\_form'}  \ottsym{)}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \leq  term'  \ottsym{)}}{%
 {\ottdrulename{Wf\_Guarded\_Leq}}{}%
 }}
 
 
 \newcommand{\ottdruleWfXXGuardedXXEq}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form'}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term'  \ottsym{)}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{expr\_form}  =  \ottnt{expr\_form'}  \ottsym{)}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  =  term'  \ottsym{)}}{%
 {\ottdrulename{Wf\_Guarded\_Eq}}{}%
 }}
 
 
 \newcommand{\ottdruleWfXXGuardedXXOr}[1]{\ottdrule[#1]{%
-\ottpremise{\ottcomp{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{form_{\ottmv{j}}}  \ottsym{)}}{\ottmv{j}}}%
+\ottpremise{\ottcomp{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{\ottmv{j}}  \ottsym{)}}{\ottmv{j}}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \bigvee  \ottsym{(} \, \ottcomp{\ottnt{form_{\ottmv{j}}}}{\ottmv{j}} \, \ottsym{)}  \ottsym{)}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \bigvee  \ottsym{(} \, \ottcomp{term_{\ottmv{j}}}{\ottmv{j}} \, \ottsym{)}  \ottsym{)}}{%
 {\ottdrulename{Wf\_Guarded\_Or}}{}%
 }}
 
 
 \newcommand{\ottdruleWfXXGuardedXXAnd}[1]{\ottdrule[#1]{%
-\ottpremise{\ottcomp{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{form_{\ottmv{j}}}  \ottsym{)}}{\ottmv{j}}}%
+\ottpremise{\ottcomp{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{\ottmv{j}}  \ottsym{)}}{\ottmv{j}}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \bigwedge  \ottsym{(} \, \ottcomp{\ottnt{form_{\ottmv{j}}}}{\ottmv{j}} \, \ottsym{)}  \ottsym{)}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \bigwedge  \ottsym{(} \, \ottcomp{term_{\ottmv{j}}}{\ottmv{j}} \, \ottsym{)}  \ottsym{)}}{%
 {\ottdrulename{Wf\_Guarded\_And}}{}%
 }}
 
-\newcommand{\ottdefnWfXXGuarded}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{form}  \ottsym{)}$}{}
+
+\newcommand{\ottdruleWfXXGuardedXXNeg}[1]{\ottdrule[#1]{%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \neg \, term  \ottsym{)}}{%
+{\ottdrulename{Wf\_Guarded\_Neg}}{}%
+}}
+
+
+\newcommand{\ottdruleWfXXGuardedXXITE}[1]{\ottdrule[#1]{%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{{\mathrm{1}}}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{{\mathrm{2}}}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{{\mathrm{3}}}  \ottsym{)}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottkw{if} \, term_{{\mathrm{1}}} \, \ottkw{then} \, term_{{\mathrm{2}}} \, \ottkw{else} \, term_{{\mathrm{3}}}  \ottsym{)}}{%
+{\ottdrulename{Wf\_Guarded\_ITE}}{}%
+}}
+
+\newcommand{\ottdefnWfXXGuarded}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term  \ottsym{)}$}{}
 \ottusedrule{\ottdruleWfXXGuardedXXLeq{}}
 \ottusedrule{\ottdruleWfXXGuardedXXEq{}}
 \ottusedrule{\ottdruleWfXXGuardedXXOr{}}
 \ottusedrule{\ottdruleWfXXGuardedXXAnd{}}
+\ottusedrule{\ottdruleWfXXGuardedXXNeg{}}
+\ottusedrule{\ottdruleWfXXGuardedXXITE{}}
 \end{ottdefnblock}}
 
-%% defn Vconstr_Eexpr
-\newcommand{\ottdruleWfXXVconstrXXEexprXXEVar}[1]{\ottdrule[#1]{%
-\ottpremise{ident \, \in \, \mathcal{C}  \ottsym{;}  \mathcal{L}}%
+%% defn Array_Prop
+\newcommand{\ottdruleWfXXArrayXXPropXXBase}[1]{\ottdrule[#1]{%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  term_{{\mathrm{1}}}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  term_{{\mathrm{2}}}  \ottsym{)}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  ident  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Eexpr\_EVar}}{}%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{well\_formed} \, \ottsym{(}  \forall \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, . \:  term_{{\mathrm{1}}}  \rightarrow  term_{{\mathrm{2}}}  \ottsym{)}}{%
+{\ottdrulename{Wf\_Array\_Prop\_Base}}{}%
 }}
 
-
-\newcommand{\ottdruleWfXXVconstrXXEexprXXScaledXXEVar}[1]{\ottdrule[#1]{%
-\ottpremise{ident \, \in \, \mathcal{C}  \ottsym{;}  \mathcal{L}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  z  \times  ident  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Eexpr\_Scaled\_EVar}}{}%
-}}
-
-
-\newcommand{\ottdruleWfXXVconstrXXEexprXXPlus}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form_{{\mathrm{1}}}}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form_{{\mathrm{2}}}}  \ottsym{)}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form_{{\mathrm{1}}}}  \ottsym{+}  \ottnt{expr\_form_{{\mathrm{2}}}}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Eexpr\_Plus}}{}%
-}}
-
-
-\newcommand{\ottdruleWfXXVconstrXXEexprXXIndex}[1]{\ottdrule[#1]{%
-\ottpremise{ident \, \in \, \mathcal{C}  \ottsym{;}  \mathcal{L}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  ident  \ottsym{[}  \ottnt{expr\_form}  \ottsym{]}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Eexpr\_Index}}{}%
-}}
-
-\newcommand{\ottdefnWfXXVconstrXXEexpr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}$}{}
-\ottusedrule{\ottdruleWfXXVconstrXXEexprXXEVar{}}
-\ottusedrule{\ottdruleWfXXVconstrXXEexprXXScaledXXEVar{}}
-\ottusedrule{\ottdruleWfXXVconstrXXEexprXXPlus{}}
-\ottusedrule{\ottdruleWfXXVconstrXXEexprXXIndex{}}
-\end{ottdefnblock}}
-
-%% defn Vconstr_Expr
-\newcommand{\ottdruleWfXXVconstrXXExprXXEexpr}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{vconstr\_e} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Expr\_Eexpr}}{}%
-}}
-
-
-\newcommand{\ottdruleWfXXVconstrXXExprXXIndexXXUVar}[1]{\ottdrule[#1]{%
-\ottpremise{ident \, \in \, \mathcal{C}  \ottsym{;}  \mathcal{L}}%
-\ottpremise{ident' \, \in \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  ident  \ottsym{[}  ident'  \ottsym{]}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Expr\_Index\_UVar}}{}%
-}}
-
-\newcommand{\ottdefnWfXXVconstrXXExpr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}$}{}
-\ottusedrule{\ottdruleWfXXVconstrXXExprXXEexpr{}}
-\ottusedrule{\ottdruleWfXXVconstrXXExprXXIndexXXUVar{}}
-\end{ottdefnblock}}
-
-%% defn Vconstr
-\newcommand{\ottdruleWfXXVconstrXXLeq}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form'}  \ottsym{)}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  \leq  \ottnt{expr\_form'}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Leq}}{}%
-}}
-
-
-\newcommand{\ottdruleWfXXVconstrXXEq}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form'}  \ottsym{)}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{expr\_form}  =  \ottnt{expr\_form'}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Eq}}{}%
-}}
-
-
-\newcommand{\ottdruleWfXXVconstrXXOr}[1]{\ottdrule[#1]{%
-\ottpremise{\ottcomp{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{form_{\ottmv{j}}}  \ottsym{)}}{\ottmv{j}}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \bigvee  \ottsym{(} \, \ottcomp{\ottnt{form_{\ottmv{j}}}}{\ottmv{j}} \, \ottsym{)}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_Or}}{}%
-}}
-
-
-\newcommand{\ottdruleWfXXVconstrXXAnd}[1]{\ottdrule[#1]{%
-\ottpremise{\ottcomp{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{form_{\ottmv{j}}}  \ottsym{)}}{\ottmv{j}}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \bigwedge  \ottsym{(} \, \ottcomp{\ottnt{form_{\ottmv{j}}}}{\ottmv{j}} \, \ottsym{)}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Vconstr\_And}}{}%
-}}
-
-\newcommand{\ottdefnWfXXVconstr}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{form}  \ottsym{)}$}{}
-\ottusedrule{\ottdruleWfXXVconstrXXLeq{}}
-\ottusedrule{\ottdruleWfXXVconstrXXEq{}}
-\ottusedrule{\ottdruleWfXXVconstrXXOr{}}
-\ottusedrule{\ottdruleWfXXVconstrXXAnd{}}
-\end{ottdefnblock}}
-
-%% defn Apf
-\newcommand{\ottdruleWfXXApfXXBase}[1]{\ottdrule[#1]{%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{guarded} \, \ottsym{(}  \ottnt{form_{{\mathrm{1}}}}  \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \mid \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, \vdash \, \ottkw{vconstr} \, \ottsym{(}  \ottnt{form_{{\mathrm{2}}}}  \ottsym{)}}%
-}{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{well\_formed} \, \ottsym{(}  \forall \, \ottcomp{ident_{\ottmv{i}}}{\ottmv{i}} \, . \:  \ottnt{form_{{\mathrm{1}}}}  \rightarrow  \ottnt{form_{{\mathrm{2}}}}  \ottsym{)}}{%
-{\ottdrulename{Wf\_Apf\_Base}}{}%
-}}
-
-\newcommand{\ottdefnWfXXApf}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{well\_formed} \, \ottsym{(}  \ottnt{array\_prop\_form}  \ottsym{)}$}{}
-\ottusedrule{\ottdruleWfXXApfXXBase{}}
+\newcommand{\ottdefnWfXXArrayXXProp}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \vdash \, \ottkw{well\_formed} \, \ottsym{(}  \ottnt{array\_prop}  \ottsym{)}$}{}
+\ottusedrule{\ottdruleWfXXArrayXXPropXXBase{}}
 \end{ottdefnblock}}
 
 
 \newcommand{\ottdefnswfXXjtyp}{
-\ottdefnWfXXGuardedXXEexpr{}\ottdefnWfXXGuardedXXExpr{}\ottdefnWfXXGuarded{}\ottdefnWfXXVconstrXXEexpr{}\ottdefnWfXXVconstrXXExpr{}\ottdefnWfXXVconstr{}\ottdefnWfXXApf{}}
+\ottdefnWfXXGuardedXXEexpr{}\ottdefnWfXXGuardedXXExpr{}\ottdefnWfXXGuarded{}\ottdefnWfXXArrayXXProp{}}
 
 % defns lemma_jtype
 %% defn Arg_Env
@@ -1233,8 +1148,16 @@
 \newcommand{\ottdruleTyXXResXXEqXXPointsTo}[1]{\ottdrule[#1]{%
 \ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow  \ottsym{(}  term_{{\mathrm{1}}}  =  term'_{{\mathrm{1}}}  \ottsym{)}  \wedge  \ottsym{(}  term_{{\mathrm{2}}}  =  term'_{{\mathrm{2}}}  \ottsym{)}  \ottsym{)}}%
 }{
-\Phi  \vdash   term_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}}  \, \equiv \,  term'_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term'_{{\mathrm{2}}} }{%
+\Phi  \vdash   term_{{\mathrm{1}}}  \ottsym{(}  \ottnt{q}  \ottsym{)}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}}  \, \equiv \,  term'_{{\mathrm{1}}}  \ottsym{(}  \ottnt{q}  \ottsym{)}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term'_{{\mathrm{2}}} }{%
 {\ottdrulename{Ty\_Res\_Eq\_PointsTo}}{}%
+}}
+
+
+\newcommand{\ottdruleTyXXResXXEqXXQPointsTo}[1]{\ottdrule[#1]{%
+\ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow  \ottsym{(}  \ottnt{iguard}  \rightarrow  \ottnt{iguard'}  \ottsym{)}  \wedge  \ottsym{(}  \ottnt{iguard'}  \rightarrow  \ottnt{iguard}  \ottsym{)}  \wedge  \ottsym{(}  term_{{\mathrm{1}}}  =  term'_{{\mathrm{1}}}  \ottsym{)}  \wedge  \ottsym{(}  term_{{\mathrm{2}}}  =  term'_{{\mathrm{2}}}  \ottsym{)}  \ottsym{)}}%
+}{
+\Phi  \vdash   \Asterisk   \ottmv{x}   . \:   \ottnt{iguard}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}}  \, \equiv \,  \Asterisk   \ottmv{x}   . \:   \ottnt{iguard'}  ;  term'_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term'_{{\mathrm{2}}} }{%
+{\ottdrulename{Ty\_Res\_Eq\_QPointsTo}}{}%
 }}
 
 
@@ -1283,6 +1206,7 @@
 \newcommand{\ottdefnTyXXResXXEq}[1]{\begin{ottdefnblock}[#1]{$\Phi  \vdash  \ottnt{res} \, \equiv \, \ottnt{res'}$}{}
 \ottusedrule{\ottdruleTyXXResXXEqXXEmp{}}
 \ottusedrule{\ottdruleTyXXResXXEqXXPointsTo{}}
+\ottusedrule{\ottdruleTyXXResXXEqXXQPointsTo{}}
 \ottusedrule{\ottdruleTyXXResXXEqXXSepConj{}}
 \ottusedrule{\ottdruleTyXXResXXEqXXExists{}}
 \ottusedrule{\ottdruleTyXXResXXEqXXTerm{}}
@@ -1304,6 +1228,15 @@
 }{
 \mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \cdot  \ottsym{,}  \ottmv{\_}  {:}  \ottnt{points\_to}  \vdash  \ottnt{points\_to'}  \Leftarrow  \ottnt{points\_to''}}{%
 {\ottdrulename{Ty\_Res\_PointsTo}}{}%
+}}
+
+
+\newcommand{\ottdruleTyXXResXXQPointsTo}[1]{\ottdrule[#1]{%
+\ottpremise{\Phi  \vdash  \ottnt{qpoints\_to} \, \equiv \, \ottnt{qpoints\_to'}}%
+\ottpremise{\Phi  \vdash  \ottnt{qpoints\_to'} \, \equiv \, \ottnt{qpoints\_to''}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \cdot  \ottsym{,}  \ottmv{\_}  {:}  \ottnt{qpoints\_to}  \vdash  \ottnt{qpoints\_to'}  \Leftarrow  \ottnt{qpoints\_to''}}{%
+{\ottdrulename{Ty\_Res\_QPointsTo}}{}%
 }}
 
 
@@ -1354,14 +1287,67 @@
 {\ottdrulename{Ty\_Res\_Fold}}{}%
 }}
 
+
+\newcommand{\ottdruleTyXXResXXExplode}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{pt} \, \equiv \,  term_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \ottkw{array} \, \ottmv{n} \, \tau  } }  term_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{qpt} \, \equiv \,  \Asterisk   \ottmv{x}   . \:    0   \leq  \ottmv{x}  \wedge  \ottmv{x}  \leq  \ottmv{n}  \ottsym{+}   1   ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}}  \ottsym{[}  \ottmv{x}  \ottsym{]} }%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottnt{res\_term}  \Leftarrow  \ottnt{pt}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{explode} \, \ottsym{(}  \ottnt{res\_term}  {:}  \ottnt{pt}  \ottsym{)}  \Leftarrow  \ottnt{qpt}}{%
+{\ottdrulename{Ty\_Res\_Explode}}{}%
+}}
+
+
+\newcommand{\ottdruleTyXXResXXImplode}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{qpt} \, \equiv \,  \Asterisk   \ottmv{x}   . \:   \ottnt{iguard}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{pt} \, \equiv \,  term'_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \ottkw{array} \, \ottmv{n} \, \tau  } }  term'_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{iguard'}  =  \ottsym{(}   0   \leq  \ottmv{x}  \wedge  \ottmv{x}  \leq  \ottmv{n}  \ottsym{+}   1   \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottnt{res\_term}  \Leftarrow   \Asterisk   \ottmv{x}   . \:   \ottnt{iguard}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }%
+\ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow  \ottsym{(}  \ottnt{iguard}  \rightarrow  \ottnt{iguard'}  \ottsym{)}  \wedge  \ottsym{(}  \ottnt{iguard'}  \rightarrow  \ottnt{iguard}  \ottsym{)}  \wedge  \ottsym{(}  term_{{\mathrm{1}}}  =  term'_{{\mathrm{1}}}  \ottsym{)}  \wedge  \ottsym{(}  term_{{\mathrm{2}}}  =  term'_{{\mathrm{2}}}  \ottsym{[}  \ottmv{x}  \ottsym{]}  \ottsym{)}  \ottsym{)}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{implode} \, \ottsym{(}  \ottnt{res\_term}  {:}  \ottnt{qpt}  \ottsym{,}  \ottmv{n}  \ottsym{)}  \Leftarrow  \ottnt{pt}}{%
+{\ottdrulename{Ty\_Res\_Implode}}{}%
+}}
+
+
+\newcommand{\ottdruleTyXXResXXBreak}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{qpt} \, \equiv \,  \Asterisk   \ottmv{x}   . \:   \ottnt{iguard}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{qpt'} \, \equiv \,  \Asterisk   \ottmv{x}   . \:   \ottnt{iguard'}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{pt} \, \equiv \,  term_{{\mathrm{1}}}  \ottsym{+}  \ottmv{i}  \times   \mathrm{size\_of}(  \tau  )   \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }   \ottmv{i}  \ottsym{/}  \ottmv{x}  \ottsym{,}  \cdot  (  \ottnt{term_{{\mathrm{2}}}}  )  }%
+\ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \ottsym{,}  \ottnt{iguard'}  \Rightarrow   \ottmv{x}    \mathbin{ \texttt{!=} }    \ottmv{i}   \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottnt{res\_term}  \Leftarrow  \ottnt{qpt}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{break} \, \ottsym{(}  \ottnt{res\_term}  {:}  \ottnt{qpt}  \ottsym{,}  \ottmv{i}  \ottsym{)}  \Leftarrow  \ottnt{qpt'}  *  \ottnt{pt}}{%
+{\ottdrulename{Ty\_Res\_Break}}{}%
+}}
+
+
+\newcommand{\ottdruleTyXXResXXGlue}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{qpt'} \, \equiv \,  \Asterisk   \ottmv{x}   . \:   \ottnt{iguard'}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term'_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{pt} \, \equiv \,  term''_{{\mathrm{1}}}  \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  term''_{{\mathrm{2}}} }%
+\ottpremise{\ottmv{i} \, \equiv \, \ottsym{(}  term''_{{\mathrm{1}}}  \ottsym{-}  term_{{\mathrm{1}}}  \ottsym{)}  \ottsym{/}   \mathrm{size\_of}(  \tau  ) }%
+\ottpremise{\ottnt{qpt} \, \equiv \,  \Asterisk   \ottmv{x}   . \:   \ottnt{iguard}  ;  term_{{\mathrm{1}}}  + x \times \mathrm{size\_of}(  \tau  ) \mathbin{ { \overset{  init  }{ \mapsto } }_{  \tau  } }  \ottkw{if} \, \ottmv{x}  =  \ottmv{i} \, \ottkw{then} \, term''_{{\mathrm{2}}} \, \ottkw{else} \, term'_{{\mathrm{2}}} }%
+\ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow  \ottsym{(}  \ottnt{iguard}  \rightarrow  \ottsym{(}  \ottnt{iguard'}  \vee  \ottmv{x}  =  \ottmv{i}  \ottsym{)}  \ottsym{)}  \wedge  \ottsym{(}  \ottsym{(}  \ottnt{iguard'}  \vee  \ottmv{x}  =  \ottmv{i}  \ottsym{)}  \rightarrow  \ottnt{iguard}  \ottsym{)}  \ottsym{)}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}_{{\mathrm{1}}}  \vdash  \ottnt{res\_term_{{\mathrm{1}}}}  \Leftarrow  \ottnt{qpt'}}%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}_{{\mathrm{2}}}  \vdash  \ottnt{res\_term_{{\mathrm{2}}}}  \Leftarrow  \ottnt{pt}}%
+}{
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}_{{\mathrm{1}}}  \ottsym{,}  \mathcal{R}_{{\mathrm{2}}}  \vdash  \ottkw{glue} \, \ottsym{(}  \ottnt{res\_term_{{\mathrm{1}}}}  {:}  \ottnt{qpt'}  \ottsym{,}  \ottnt{res\_term_{{\mathrm{2}}}}  {:}  \ottnt{pt}  \ottsym{)}  \Leftarrow  \ottnt{qpt}}{%
+{\ottdrulename{Ty\_Res\_Glue}}{}%
+}}
+
 \newcommand{\ottdefnTyXXRes}[1]{\begin{ottdefnblock}[#1]{$\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottnt{res\_term}  \Leftarrow  \ottnt{res}$}{}
 \ottusedrule{\ottdruleTyXXResXXEmp{}}
 \ottusedrule{\ottdruleTyXXResXXPointsTo{}}
+\ottusedrule{\ottdruleTyXXResXXQPointsTo{}}
 \ottusedrule{\ottdruleTyXXResXXVar{}}
 \ottusedrule{\ottdruleTyXXResXXSepConj{}}
 \ottusedrule{\ottdruleTyXXResXXConj{}}
 \ottusedrule{\ottdruleTyXXResXXPack{}}
 \ottusedrule{\ottdruleTyXXResXXFold{}}
+\ottusedrule{\ottdruleTyXXResXXExplode{}}
+\ottusedrule{\ottdruleTyXXResXXImplode{}}
+\ottusedrule{\ottdruleTyXXResXXBreak{}}
+\ottusedrule{\ottdruleTyXXResXXGlue{}}
 \end{ottdefnblock}}
 
 %% defn Heap
@@ -2135,7 +2121,7 @@ pattern  {:}  \beta  \leadsto  \mathcal{C} \, \ottkw{with} \, term}{%
 \newcommand{\ottdruleTyXXActionXXCreate}[1]{\ottdrule[#1]{%
 \ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \vdash  pval  \Rightarrow  \ottkw{integer}}%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \cdot  \vdash  \ottkw{create} \, \ottsym{(}  pval  \ottsym{,}  \tau  \ottsym{)}    \Rightarrow  \Sigma \, { y_p }  {:}  \ottkw{loc}  . \:  \ottkw{representable} \, \ottsym{(}  \tau  *  \ottsym{,}  { y_p }  \ottsym{)}  \wedge  \ottkw{alignedI} \, \ottsym{(}   pval   \ottsym{,}  { y_p }  \ottsym{)}  \wedge  \exists \, \ottmv{y}  {:}   \beta_{  \tau  }   . \:    { y_p }  \mathbin{ { \overset{   {  \times  }   }{ \mapsto } }_{  \tau  } }  \ottmv{y}    \otimes  \ottkw{I}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \cdot  \vdash  \ottkw{create} \, \ottsym{(}  pval  \ottsym{,}  \tau  \ottsym{)}    \Rightarrow  \Sigma \, { y_p }  {:}  \ottkw{loc}  . \:  \ottkw{representable} \, \ottsym{(}  \tau  *  \ottsym{,}  { y_p }  \ottsym{)}  \wedge  \ottkw{alignedI} \, \ottsym{(}   pval   \ottsym{,}  { y_p }  \ottsym{)}  \wedge  \exists \, \ottmv{y}  {:}   \beta_{  \tau  }   . \:    { y_p }  \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{   {  \times  }   }{ \mapsto } }_{  \tau  } }  \ottmv{y}    \otimes  \ottkw{I}}{%
 {\ottdrulename{Ty\_Action\_Create}}{}%
 }}
 
@@ -2143,9 +2129,9 @@ pattern  {:}  \beta  \leadsto  \mathcal{C} \, \ottkw{with} \, term}{%
 \newcommand{\ottdruleTyXXActionXXLoad}[1]{\ottdrule[#1]{%
 \ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \vdash  pval_{{\mathrm{0}}}  \Rightarrow  \ottkw{loc}}%
 \ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow   pval_{{\mathrm{0}}}   =   pval_{{\mathrm{1}}}   \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}    \Leftarrow    pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}  }%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}    \Leftarrow    pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}  }%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{load} \, \ottsym{(}  \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}  \_  \ottsym{,}    pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}    \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{y}  {:}   \beta_{  \tau  }   . \:  \ottmv{y}  =   pval_{{\mathrm{2}}}   \wedge     pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}     \otimes  \ottkw{I}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{load} \, \ottsym{(}  \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}  \_  \ottsym{,}    pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}    \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{y}  {:}   \beta_{  \tau  }   . \:  \ottmv{y}  =   pval_{{\mathrm{2}}}   \wedge     pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{2}}}     \otimes  \ottkw{I}}{%
 {\ottdrulename{Ty\_Action\_Load}}{}%
 }}
 
@@ -2155,9 +2141,9 @@ pattern  {:}  \beta  \leadsto  \mathcal{C} \, \ottkw{with} \, term}{%
 \ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \vdash  pval_{{\mathrm{1}}}  \Rightarrow   \beta_{  \tau  } }%
 \ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow  \ottkw{representable} \, \ottsym{(}  \tau  \ottsym{,}   pval_{{\mathrm{1}}}   \ottsym{)}  \ottsym{)}}%
 \ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow   pval_{{\mathrm{2}}}   =   pval_{{\mathrm{0}}}   \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{2}}}   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \Leftarrow    pval_{{\mathrm{2}}}   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_ }%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{2}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \Leftarrow    pval_{{\mathrm{2}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_ }%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{store} \, \ottsym{(}  \_  \ottsym{,}  \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}  pval_{{\mathrm{1}}}  \ottsym{,}  \_  \ottsym{,}    pval_{{\mathrm{2}}}   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{\_}  {:}  \ottkw{unit}  . \:     pval_{{\mathrm{2}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{1}}}     \otimes  \ottkw{I}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{store} \, \ottsym{(}  \_  \ottsym{,}  \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}  pval_{{\mathrm{1}}}  \ottsym{,}  \_  \ottsym{,}    pval_{{\mathrm{2}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{\_}  {:}  \ottkw{unit}  . \:     pval_{{\mathrm{2}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval_{{\mathrm{1}}}     \otimes  \ottkw{I}}{%
 {\ottdrulename{Ty\_Action\_Store}}{}%
 }}
 
@@ -2165,9 +2151,9 @@ pattern  {:}  \beta  \leadsto  \mathcal{C} \, \ottkw{with} \, term}{%
 \newcommand{\ottdruleTyXXActionXXKillXXStatic}[1]{\ottdrule[#1]{%
 \ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \vdash  pval_{{\mathrm{0}}}  \Rightarrow  \ottkw{loc}}%
 \ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow   pval_{{\mathrm{0}}}   =   pval_{{\mathrm{1}}}   \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{1}}}   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \Leftarrow    pval_{{\mathrm{1}}}   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_ }%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \Leftarrow    pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_ }%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{kill} \, \ottsym{(}  \ottkw{static} \, \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}    pval_{{\mathrm{1}}}   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{\_}  {:}  \ottkw{unit}  . \:  \ottkw{I}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{kill} \, \ottsym{(}  \ottkw{static} \, \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}    pval_{{\mathrm{1}}}   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{\_}  {:}  \ottkw{unit}  . \:  \ottkw{I}}{%
 {\ottdrulename{Ty\_Action\_Kill\_Static}}{}%
 }}
 
@@ -2212,9 +2198,9 @@ pattern  {:}  \beta  \leadsto  \mathcal{C} \, \ottkw{with} \, term}{%
 \newcommand{\ottdruleTyXXMemopXXPtrValidForDeref}[1]{\ottdrule[#1]{%
 \ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \vdash  pval_{{\mathrm{0}}}  \Rightarrow  \ottkw{loc}}%
 \ottpremise{\ottkw{smt} \, \ottsym{(}  \Phi  \Rightarrow   pval_{{\mathrm{1}}}   =   pval_{{\mathrm{0}}}   \ottsym{)}}%
-\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \Leftarrow    pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_ }%
+\ottpremise{\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash    pval_{{\mathrm{1}}}   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \Leftarrow    pval_{{\mathrm{1}}}   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_ }%
 }{
-\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{ptrValidForDeref} \, \ottsym{(}  \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}    pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{y}  {:}  \ottkw{bool}  . \:  \ottmv{y}  =  \ottkw{aligned} \, \ottsym{(}  \tau  \ottsym{,}   pval_{{\mathrm{1}}}   \ottsym{)}  \wedge     pval_{{\mathrm{1}}}   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_    \otimes  \ottkw{I}}{%
+\mathcal{C}  \ottsym{;}  \mathcal{L}  \ottsym{;}  \Phi  \ottsym{;}  \mathcal{R}  \vdash  \ottkw{ptrValidForDeref} \, \ottsym{(}  \tau  \ottsym{,}  pval_{{\mathrm{0}}}  \ottsym{,}    pval_{{\mathrm{1}}}   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \Rightarrow  \Sigma \, \ottmv{y}  {:}  \ottkw{bool}  . \:  \ottmv{y}  =  \ottkw{aligned} \, \ottsym{(}  \tau  \ottsym{,}   pval_{{\mathrm{1}}}   \ottsym{)}  \wedge     pval_{{\mathrm{1}}}   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_    \otimes  \ottkw{I}}{%
 {\ottdrulename{Ty\_Memop\_PtrValidForDeref}}{}%
 }}
 
@@ -3090,7 +3076,7 @@ ident  =  \ottnt{res\_term}  \leadsto  \ottnt{res\_term}  \ottsym{/}  ident  \ot
 \newcommand{\ottdruleOpXXMemopXXTValXXPtrValidForDeref}[1]{\ottdrule[#1]{%
 \ottpremise{ bool\_value  \, \equiv \, \ottkw{aligned} \, \ottsym{(}  \tau  \ottsym{,}   mem\_ptr   \ottsym{)}}%
 }{
-\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{ptrValidForDeref} \, \ottsym{(}  \tau  \ottsym{,}  mem\_ptr  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{done} \, bool\_value  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \rangle}{%
+\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{ptrValidForDeref} \, \ottsym{(}  \tau  \ottsym{,}  mem\_ptr  \ottsym{,}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{done} \, bool\_value  \ottsym{,}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \rangle}{%
 {\ottdrulename{Op\_Memop\_TVal\_PtrValidForDeref}}{}%
 }}
 
@@ -3126,28 +3112,28 @@ ident  =  \ottnt{res\_term}  \leadsto  \ottnt{res\_term}  \ottsym{/}  ident  \ot
 \ottpremise{\ottkw{alignedI} \, \ottsym{(}   mem\_int   \ottsym{,}   mem\_ptr   \ottsym{)}}%
 \ottpremise{pval  {:}   \beta_{  \tau  } }%
 }{
-\langle  \ottnt{h}  \ottsym{;}  \ottkw{create} \, \ottsym{(}  mem\_int  \ottsym{,}  \tau  \ottsym{)}    \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{   {  \times  }   }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{done} \, mem\_ptr  \ottsym{,}  pval  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{   {  \times  }   }{ \mapsto } }_{  \tau  } }   pval    \rangle}{%
+\langle  \ottnt{h}  \ottsym{;}  \ottkw{create} \, \ottsym{(}  mem\_int  \ottsym{,}  \tau  \ottsym{)}    \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{   {  \times  }   }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{done} \, mem\_ptr  \ottsym{,}  pval  \ottsym{,}    mem\_ptr   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{   {  \times  }   }{ \mapsto } }_{  \tau  } }   pval    \rangle}{%
 {\ottdrulename{Op\_Action\_Tval\_Create}}{}%
 }}
 
 
 \newcommand{\ottdruleOpXXActionXXTvalXXLoad}[1]{\ottdrule[#1]{%
 }{
-\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{load} \, \ottsym{(}  \tau  \ottsym{,}  mem\_ptr  \ottsym{,}  \_  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{done} \, pval  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \rangle}{%
+\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{load} \, \ottsym{(}  \tau  \ottsym{,}  mem\_ptr  \ottsym{,}  \_  \ottsym{,}    mem\_ptr   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{done} \, pval  \ottsym{,}    mem\_ptr   \ottsym{(}   1   \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \rangle}{%
 {\ottdrulename{Op\_Action\_Tval\_Load}}{}%
 }}
 
 
 \newcommand{\ottdruleOpXXActionXXTvalXXStore}[1]{\ottdrule[#1]{%
 }{
-\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{store} \, \ottsym{(}  \_  \ottsym{,}  \tau  \ottsym{,}  mem\_ptr  \ottsym{,}  pval  \ottsym{,}  \_  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{done} \, \ottkw{Unit}  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \rangle}{%
+\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{store} \, \ottsym{(}  \_  \ottsym{,}  \tau  \ottsym{,}  mem\_ptr  \ottsym{,}  pval  \ottsym{,}  \_  \ottsym{,}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \ottsym{\}}  \ottsym{;}  \ottkw{done} \, \ottkw{Unit}  \ottsym{,}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{  \checkmark  }{ \mapsto } }_{  \tau  } }   pval    \rangle}{%
 {\ottdrulename{Op\_Action\_Tval\_Store}}{}%
 }}
 
 
 \newcommand{\ottdruleOpXXActionXXTvalXXKillXXStatic}[1]{\ottdrule[#1]{%
 }{
-\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{kill} \, \ottsym{(}  \ottkw{static} \, \tau  \ottsym{,}  mem\_ptr  \ottsym{,}    mem\_ptr   \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{;}  \ottkw{done} \, \ottkw{Unit}  \rangle}{%
+\langle  \ottnt{h}  \ottsym{+}  \ottsym{\{}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{\}}  \ottsym{;}  \ottkw{kill} \, \ottsym{(}  \ottkw{static} \, \tau  \ottsym{,}  mem\_ptr  \ottsym{,}    mem\_ptr   \ottsym{(}  \_  \ottsym{)}  \mathbin{ { \overset{    }{ \mapsto } }_{  \tau  } }  \_   \ottsym{)}  \rangle  \longrightarrow  \langle  \ottnt{h}  \ottsym{;}  \ottkw{done} \, \ottkw{Unit}  \rangle}{%
 {\ottdrulename{Op\_Action\_Tval\_Kill\_Static}}{}%
 }}
 
@@ -3266,7 +3252,7 @@ ident  =  \ottnt{res\_term}  \leadsto  \ottnt{res\_term}  \ottsym{/}  ident  \ot
 \ottall
 
 \begin{verbatim}
-Definition rules:        233 good    0 bad
-Definition rule clauses: 525 good    0 bad
+Definition rules:        231 good    0 bad
+Definition rule clauses: 535 good    0 bad
 \end{verbatim}
 \end{document}
