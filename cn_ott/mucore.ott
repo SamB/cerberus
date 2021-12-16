@@ -574,8 +574,8 @@ grammar
 
   res_term :: 'ResT_' ::= {{ com resource terms }}
     | emp                                          ::   :: Empty      {{ com empty heap                                          }}
-    | points_to                                    ::   :: Points_to  {{ com single-cell heap                                    }}
-    | qpoints_to                                   ::   :: Qpoints_to {{ com contiguous-cell heap                                }}
+    | PT                                           ::   :: Points_to  {{ com single-cell heap        }} {{ tex \texttt{pt}       }}
+    | QPT                                          ::   :: Qpoints_to {{ com contiguous-cell heap    }} {{ tex \texttt{qpt}      }}
     | Symbol_sym                                   ::   :: Var        {{ com variable                                            }}
     | <( res_term1 , res_term2 )>                  ::   :: SepPair    {{ com seperating-conjunction pair                         }}
     | pack ( mu_pval_aux , res_term )              ::   :: Pack       {{ com packing for existentials                            }}
@@ -595,9 +595,9 @@ grammar
     | create ( mu_pval_aux , ty_act ) Symbol_prefix                                                                   :: :: Create
     | create_readonly ( mu_pval_aux1 , ty_act , mu_pval_aux2 ) Symbol_prefix                                          :: :: CreateReadOnly
     | alloc ( mu_pval_aux1 , mu_pval_aux2 ) Symbol_prefix                                                             :: :: Alloc
-    | kill ( m_kill_kind , mu_pval_aux , pt )                                                                         :: :: Kill
-    | store ( ty_bool , ty_act , mu_pval_aux1 , mu_pval_aux2 , Cmm_memory_order , pt )                                :: :: Store {{ com true means store is locking }}
-    | load ( ty_act , mu_pval_aux , Cmm_memory_order , pt )                                                           :: :: Load
+    | kill ( m_kill_kind , mu_pval_aux , res_term )                                                                    :: :: Kill
+    | store ( ty_bool , ty_act , mu_pval_aux1 , mu_pval_aux2 , Cmm_memory_order , res_term )                          :: :: Store {{ com true means store is locking }}
+    | load ( ty_act , mu_pval_aux , Cmm_memory_order , res_term )                                                     :: :: Load
     | rmw ( ty_act ,  mu_pval_aux1 , mu_pval_aux2 , mu_pval_aux3 , Cmm_memory_order1 , Cmm_memory_order2 )            :: :: RMW
     | fence ( Cmm_memory_order )                                                                                      :: :: Fence
     | cmp_exch_strong ( ty_act , mu_pval_aux1 , mu_pval_aux2 , mu_pval_aux3 , Cmm_memory_order1 , Cmm_memory_order2 ) :: :: CompareExchangeStrong
@@ -632,7 +632,7 @@ grammar
                                                                                      {{ tex [[mu_pval_aux1]] -_{ [[ty_act]] } [[mu_pval_aux2]] }}
     | intFromPtr ( ty_act1 , ty_act2 , mu_pval_aux )          :: :: IntFromPtr       {{ com cast of pointer value to integer value }}
     | ptrFromInt ( ty_act1 , ty_act2 , mu_pval_aux )          :: :: PtrFromInt       {{ com cast of integer value to pointer value }}
-    | ptrValidForDeref ( ty_act , mu_pval_aux , pt )          :: :: PtrValidForDeref {{ com dereferencing validity predicate }}
+    | ptrValidForDeref ( ty_act , mu_pval_aux , res_term )    :: :: PtrValidForDeref {{ com dereferencing validity predicate }}
     | ptrWellAligned ( ty_act , mu_pval_aux )                 :: :: PtrWellAligned
     | ptrArrayShift ( mu_pval_aux1 ,  ty_act , mu_pval_aux2 ) :: :: PtrArrayShift
     | memcpy ( mu_pval_aux1 , mu_pval_aux2 , mu_pval_aux3 )   :: :: Memcpy
@@ -1193,9 +1193,10 @@ defns
 grammar
 
   heap , h , f :: 'Heap_' ::= {{ phantom }} {{ com heaps }}
-    | cdot              ::   :: empty
-    | h + { points_to } ::   :: points_to
-    | h + f             :: O :: concat    {{ com convenient for the soundness proof }}
+    | cdot               ::   :: empty
+    | h + { points_to }  ::   :: points_to
+    | h + { qpoints_to } ::   :: qpoints_to
+    | h + f              :: O :: concat    {{ com convenient for the soundness proof }}
 
 
 defns
@@ -1210,7 +1211,7 @@ defns
 
     smt ( N => ( term_aux1 = term_aux'1 ) /\ ( term_aux2 = term_aux'2 ) )
     ----------------------------------------------------------------------------------------------- :: PointsTo
-    N |- term_aux1 ( q )|- init_t - ct -> term_aux2 eq term_aux'1 ( q )|- init_t - ct -> term_aux'2
+    N |- term_aux1 |- init_t - ct -> term_aux2 eq term_aux'1 |- init_t - ct -> term_aux'2
 
 
     smt ( N => ( iguard <-> iguard' ) /\ ( term_aux1 = term_aux'1 ) /\ ( term_aux2 = term_aux'2 ) )
@@ -1253,16 +1254,14 @@ defns
     C ; L ; N ; cdot |- emp <= emp
 
 
-    N |- points_to  eq points_to'
-    N |- points_to' eq points_to''
-    ------------------------------------------------------------- :: PointsTo
-    C ; L ; N ; cdot , _ : points_to |- points_to' <= points_to''
+    N |- points_to eq points_to'
+    ---------------------------------------------------- :: PointsTo
+    C ; L ; N ; cdot , _ : points_to |- PT <= points_to'
 
 
-    N |- qpoints_to  eq qpoints_to'
-    N |- qpoints_to' eq qpoints_to''
-    ---------------------------------------------------------------- :: QPointsTo
-    C ; L ; N ; cdot , _ : qpoints_to |- qpoints_to' <= qpoints_to''
+    N |- qpoints_to eq qpoints_to'
+    ------------------------------------------------------- :: QPointsTo
+    C ; L ; N ; cdot , _ : qpoints_to |- QPT <= qpoints_to'
 
 
     N |- res1' = strip_ifs ( res1 )
@@ -1303,9 +1302,10 @@ defns
     % can/shoudl this synthesise?
     pt eq term_aux1 |- init_t - array n ct -> term_aux2
     qpt eq *S x . z_zero =< x /\ x =< n - z_one ; term_aux1 |- init_t - ct -> term_aux2 [ x ]
+    N |- qpt eq qpt'
     C ; L ; N ; R |- res_term <= pt
     ----------------------------------------------------------------------------------------- :: Explode
-    C ; L ; N ; R |- explode ( res_term : pt ) <= qpt
+    C ; L ; N ; R |- explode ( res_term : pt ) <= qpt'
 
 
     % issues about init all-or-nothing..?
@@ -1320,25 +1320,25 @@ defns
     C ; L ; N ; R |- implode ( res_term : qpt , n ) <=  pt
 
 
-    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
-    qpt' eq *S x . iguard' ; term_aux1 |- init_t - ct -> term_aux2
+    qpt1 eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
+    qpt eq *S x . iguard /\ ( x ' <> ' i ) ; term_aux1 |- init_t - ct -> term_aux2
     pt eq term_aux1 + i * size_of ct |- init_t - ct -> [ i / x , cdot ] term2
-    smt ( N => ( iguard /\ ( x ' <> ' i ) ) <-> iguard' )
+    N |- pt eq pt'
+    N |- qpt eq qpt'
     C ; L ; N ; R |- res_term <= qpt
     -------------------------------------------------------------- :: Break
-    C ; L ; N ; R |- break ( res_term : qpt , i ) <= qpt' *s pt
+    C ; L ; N ; R |- break ( res_term : qpt1 , i ) <= qpt' *s pt'
 
 
-    qpt' eq *S x . iguard' ; term_aux1 |- init_t - ct -> term_aux'2
-    pt eq term_aux''1 |- init_t - ct -> term_aux''2
-    i eq ( term_aux''1 - term_aux1 ) / size_of ct
-    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
-    smt ( N => term_aux2 = ( if x = i then term_aux''2 else term_aux'2 ) )
-    smt ( N => iguard <-> ( iguard' \/ x = i ) )
-    C ; L ; N ; R1 |- res_term1 <= qpt'
-    C ; L ; N ; R2 |- res_term2 <= pt
+    qpt1 eq *S x . iguard1 ; term_aux11 |- init_t - ct -> term_aux12
+    pt2 eq term_aux21 |- init_t - ct -> term_aux22
+    i eq ( term_aux21 - term_aux11 ) / size_of ct
+    qpt eq *S x . ( iguard1 \/ x = i ) ; term_aux11 |- init_t - ct -> if x = i then term_aux22 else term_aux12
+    N |- qpt eq qpt'
+    C ; L ; N ; R1 |- res_term1 <= qpt1
+    C ; L ; N ; R2 |- res_term2 <= pt2
     --------------------------------------------------------------------------------- :: Glue
-    C ; L ; N ; R1 , R2 |- glue ( res_term1 : qpt' , res_term2 : pt ) <= qpt
+    C ; L ; N ; R1 , R2 |- glue ( res_term1 : qpt1 , res_term2 : pt2 ) <= qpt'
 
   defn
     h : R :: :: Heap :: Heap_ by
@@ -1348,9 +1348,15 @@ defns
 
 
     h : R
-    cdot ; cdot ; cdot ; R' |- pt <= pt
-    ----------------------------------- :: PointsTo
+    cdot ; cdot ; cdot ; R' |- res_term <= pt
+    ----------------------------------------- :: PointsTo
     h + { pt } : R , R'
+
+
+    h : R
+    cdot ; cdot ; cdot ; R' |- res_term <= qpt
+    ------------------------------------------ :: QPointsTo
+    h + { qpt } : R , R'
 
 
 defns
@@ -1849,7 +1855,7 @@ defns
 
     C ; L ; N |- mu_pval_aux => integer
     ----------------------------------- :: Create
-    C ; L ; N ; cdot |- create ( mu_pval_aux , ct ) Symbol_prefix => sigma yp : loc . representable ( ct *s , yp ) /\ alignedI ( inj mu_pval_aux , yp ) /\ exists y : to_base ( ct ) . ( yp ( q_one )|- * - ct -> y ) *o I
+    C ; L ; N ; cdot |- create ( mu_pval_aux , ct ) Symbol_prefix => sigma yp : loc . representable ( ct *s , yp ) /\ alignedI ( inj mu_pval_aux , yp ) /\ exists y : to_base ( ct ) . ( yp |- * - ct -> y ) *o I
 
 
     % NOT IMPLEMENTED
@@ -1859,26 +1865,26 @@ defns
     % NOT IMPLEMENTED - memory order
     C ; L ; N |- mu_pval_aux0 => loc
     smt ( N => inj mu_pval_aux0 = inj mu_pval_aux1 )
-    C ; L ; N ; R |- inj mu_pval_aux1 ( q_one )|- tick - ct -> inj mu_pval_aux2 <= inj mu_pval_aux1 ( q_one )|- tick - ct -> inj mu_pval_aux2
-    ----------------------------------------------------------------------------------------------------------------------------------------- :: Load
-    C ; L ; N ; R |- load ( ct , mu_pval_aux0 , _mem_order , inj mu_pval_aux1 ( q_one )|- tick - ct -> inj mu_pval_aux2 ) => sigma y : to_base ( ct ) . y = inj mu_pval_aux2 /\ ( inj mu_pval_aux1 ( q_one )|- tick - ct -> inj mu_pval_aux2 ) *o I
+    C ; L ; N ; R |- res_term <= inj mu_pval_aux1 |- tick - ct -> inj mu_pval_aux2
+    --------------------------------------------------------------------------------- :: Load
+    C ; L ; N ; R |- load ( ct , mu_pval_aux0 , _mem_order , res_term ) => sigma y : to_base ( ct ) . y = inj mu_pval_aux2 /\ ( inj mu_pval_aux1 |- tick - ct -> inj mu_pval_aux2 ) *o I
 
 
     C ; L ; N |- mu_pval_aux0 => loc
     C ; L ; N |- mu_pval_aux1 => to_base ( ct )
     % NOT IMPLEMENTED - locking boolean
     smt ( N => representable ( ct , inj mu_pval_aux1 ) )
-    smt ( N => inj mu_pval_aux2 = inj mu_pval_aux0 )
-    C ; L ; N ; R |- inj mu_pval_aux2 ( q_one )|- _i - ct -> _t <= inj mu_pval_aux2 ( q_one )|- _i - ct -> _t
+    smt ( N => inj mu_pval_aux0 = inj mu_pval_aux2 )
+    C ; L ; N ; R |- res_term <= inj mu_pval_aux2 |- _i - ct -> _t
     --------------------------------------------------------------------------------------------------------- :: Store
-    C ; L ; N ; R |- store ( _b , ct , mu_pval_aux0 , mu_pval_aux1 , _mem_order , inj mu_pval_aux2 ( q_one )|- _i - ct -> _t ) => sigma _ : unit . ( inj mu_pval_aux2 ( q_one )|- tick - ct -> inj mu_pval_aux1 ) *o I
+    C ; L ; N ; R |- store ( _b , ct , mu_pval_aux0 , mu_pval_aux1 , _mem_order , res_term ) => sigma _ : unit . ( inj mu_pval_aux2 |- tick - ct -> inj mu_pval_aux1 ) *o I
 
 
     C ; L ; N |- mu_pval_aux0 => loc
     smt ( N => inj mu_pval_aux0 = inj mu_pval_aux1 )
-    C ; L ; N ; R |- inj mu_pval_aux1 ( q_one )|- _i - ct -> _t <= inj mu_pval_aux1 ( q_one )|- _i - ct -> _t
-    --------------------------------------------------------------------------------------------------------------- :: Kill_Static
-    C ; L ; N ; R |-  kill ( static ct , mu_pval_aux0 , inj mu_pval_aux1 ( q_one )|- _i - ct -> _t ) => sigma _ : unit . I
+    C ; L ; N ; R |- res_term <= inj mu_pval_aux1 |- _i - ct -> _t
+    ------------------------------------------------------------------------------------ :: Kill_Static
+    C ; L ; N ; R |-  kill ( static ct , mu_pval_aux0 , res_term ) => sigma _ : unit . I
 
 
     % NOT IMPLEMENTED
@@ -1926,9 +1932,9 @@ defns
 
     C ; L ; N |- mu_pval_aux0 => loc
     smt ( N => inj mu_pval_aux1 = inj mu_pval_aux0 )
-    C ; L ; N ; R |- inj mu_pval_aux1 ( _q )|- tick - ct -> _t <= inj mu_pval_aux1 ( _q )|- tick - ct -> _t
+    C ; L ; N ; R |- res_term <= inj mu_pval_aux1 |- tick - ct -> _t
     ------------------------------------------------------------------------------------------------------- :: PtrValidForDeref
-    C ; L ; N ; R |- ptrValidForDeref ( ct , mu_pval_aux0 , inj mu_pval_aux1 ( _q )|- tick - ct -> _t ) => sigma y : bool . y = aligned ( ct , inj mu_pval_aux1 ) /\ ( inj mu_pval_aux1 ( _q )|- tick - ct -> _t ) *o I
+    C ; L ; N ; R |- ptrValidForDeref ( ct , mu_pval_aux0 , res_term ) => sigma y : bool . y = aligned ( ct , inj mu_pval_aux1 ) /\ ( inj mu_pval_aux1 |- tick - ct -> _t ) *o I
 
 
     C ; L ; N |- mu_pval_aux1 => loc
@@ -2194,6 +2200,9 @@ defns
     emp = emp ~> cdot
 
 
+    % Not having patterns and matching rules for PT and QPT makes substitutions
+    % and their typing match up more closely.
+
     --------------------------------------------------------- :: Var
     Symbol_sym = res_term ~> res_term / Symbol_sym , cdot
 
@@ -2204,9 +2213,24 @@ defns
     <( res_pattern1 , res_pattern2 )> = <( res_term1 , res_term2 )> ~> subs1 , subs2
 
 
-    % ASK (for glue as well?)
-    -------------------------------------------------------------------------------- :: Break_Doesnt_Work
-    <( res_pattern1 , res_pattern2 )> = break ( res_term : qpt , i ) ~> subs1 , subs2
+    <( res_pattern1 , res_pattern2 )> = <( QPT , PT )> ~> subs1 , subs2
+    -------------------------------------------------------------------------------- :: Break
+    <( res_pattern1 , res_pattern2 )> = break ( res_term : qpt1 , i ) ~> subs1 , subs2
+
+
+    res_pattern = QPT ~> subs
+    ----------------------------------------------------------------- :: Glue
+    res_pattern = glue ( res_term1 : qpt1 , res_term2 : pt2 ) ~> subs
+
+
+    res_pattern = QPT ~> subs
+    ----------------------------------------------------------------- :: Explode
+    res_pattern = explode ( res_term : pt ) ~> subs
+
+
+    res_pattern = QPT ~> subs
+    ----------------------------------------------------------------- :: Implode
+    res_pattern = implode ( res_term : qpt , ty_int ) ~> subs
 
 
     res_pattern = res_term ~> subs
@@ -2497,9 +2521,10 @@ defns
     <( h ; ptrFromInt ( ct1 , ct2 , ty_mem_int ) )> --> <( h ; done ty_mem_ptr )>
 
 
+    % TODO reduce res_term
     inj mu_bool_value eq aligned ( ct , inj ty_mem_ptr )
     ---------------------------------------------------- :: PtrValidForDeref
-    <( h + { inj ty_mem_ptr ( _q )|- tick - ct -> _t } ; ptrValidForDeref ( ct , ty_mem_ptr , inj ty_mem_ptr ( _q )|- tick - ct -> _t ) )> --> <( h + { inj ty_mem_ptr ( _q )|- tick - ct -> _t } ; done mu_bool_value , inj ty_mem_ptr ( _q )|- tick - ct -> _t )>
+    <( h + { inj ty_mem_ptr |- tick - ct -> _t } ; ptrValidForDeref ( ct , ty_mem_ptr , res_term ) )> --> <( h + { inj ty_mem_ptr |- tick - ct -> _t } ; done mu_bool_value , PT )>
 
 
     inj mu_bool_value eq aligned ( ct , inj ty_mem_ptr )
@@ -2521,19 +2546,22 @@ defns
     alignedI ( inj ty_mem_int , inj ty_mem_ptr )
     mu_pval_aux : to_base ( ct )
     -------------------------------------------- :: Create
-    <( h ; create ( ty_mem_int , ct ) Symbol_prefix )> --> <( h + { inj ty_mem_ptr ( q_one )|- * - ct -> inj mu_pval_aux } ; done ty_mem_ptr , mu_pval_aux , inj ty_mem_ptr ( q_one )|- * - ct -> inj mu_pval_aux )>
+    <( h ; create ( ty_mem_int , ct ) Symbol_prefix )> --> <( h + { inj ty_mem_ptr |- * - ct -> inj mu_pval_aux } ; done ty_mem_ptr , mu_pval_aux , PT )>
 
 
+    % TODO reduce res_term
     --------------------------------------------------------------------------------------------------------------------------------------------------------- :: Load
-    <( h + { inj ty_mem_ptr ( q_one )|- tick - ct -> inj mu_pval_aux } ; load ( ct , ty_mem_ptr , _mem_order , inj ty_mem_ptr ( q_one )|- tick - ct -> inj mu_pval_aux ) )> --> <( h + { inj ty_mem_ptr ( q_one )|- tick - ct -> inj mu_pval_aux } ; done mu_pval_aux , inj ty_mem_ptr ( q_one )|- tick - ct -> inj mu_pval_aux )>
+    <( h + { inj ty_mem_ptr |- tick - ct -> inj mu_pval_aux } ; load ( ct , ty_mem_ptr , _mem_order , res_term ) )> --> <( h + { inj ty_mem_ptr |- tick - ct -> inj mu_pval_aux } ; done mu_pval_aux , PT )>
 
 
+    % TODO reduce res_term
     --------------------------------------------------------------------------------------------------------------------------------------------------------- :: Store
-    <( h + { inj ty_mem_ptr ( _q )|- tick - ct -> _t } ; store ( _b , ct , ty_mem_ptr , mu_pval_aux , _mem_order , inj ty_mem_ptr ( _q )|- tick - ct -> _t ) )> --> <( h + { inj ty_mem_ptr ( _q )|- tick - ct -> inj mu_pval_aux } ; done Unit , inj ty_mem_ptr ( _q )|- tick - ct -> inj mu_pval_aux )>
+    <( h + { inj ty_mem_ptr |- tick - ct -> _t } ; store ( _b , ct , ty_mem_ptr , mu_pval_aux , _mem_order , res_term ) )> --> <( h + { inj ty_mem_ptr |- tick - ct -> inj mu_pval_aux } ; done Unit , res_term )>
 
 
+    % TODO reduce res_term
     --------------------------------------------------------------------------------------------------------------------------------------------------- :: Kill_Static
-    <( h + { inj ty_mem_ptr ( _q )|- _i - ct -> _t } ; kill ( static ct , ty_mem_ptr , inj ty_mem_ptr ( _q )|- _i - ct -> _t ) )> --> <( h ; done Unit )>
+    <( h + { inj ty_mem_ptr |- _i - ct -> _t } ; kill ( static ct , ty_mem_ptr , res_term ) )> --> <( h ; done Unit )>
 
 
   defn
