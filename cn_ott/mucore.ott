@@ -375,6 +375,7 @@ grammar
   bool_op :: '' ::= {{ auxparam 'bt }}
     | neg term_aux                         ::     :: Not
     | term_aux1 = term_aux2                ::     :: Eq
+    | term_aux1 <-> term_aux2              ::   M :: BiImp
     | term_aux1 -> term_aux2               ::     :: Impl
     | /\\ ( </ term_auxi // , // i />    ) ::     :: And
     | \// ( </ term_auxi // , // i />    ) ::     :: Or
@@ -820,6 +821,7 @@ grammar
     | \      :: :: lambda    {{ tex \lambda                          }}
     | -->    :: :: red       {{ tex \longrightarrow                  }}
     |  ->    :: :: arrow     {{ tex \rightarrow                      }}
+    | <->    :: :: lr_arrow  {{ tex \leftrightarrow                  }}
     |  ~>    :: :: leadsto   {{ tex \leadsto                         }}
     |  =>    :: :: synths    {{ tex \Rightarrow                      }}
     |  <=    :: :: checks    {{ tex \Leftarrow                       }}
@@ -1211,7 +1213,7 @@ defns
     N |- term_aux1 ( q )|- init_t - ct -> term_aux2 eq term_aux'1 ( q )|- init_t - ct -> term_aux'2
 
 
-    smt ( N => ( iguard -> iguard' ) /\ ( iguard' -> iguard ) /\ ( term_aux1 = term_aux'1 ) /\ ( term_aux2 = term_aux'2 ) )
+    smt ( N => ( iguard <-> iguard' ) /\ ( term_aux1 = term_aux'1 ) /\ ( term_aux2 = term_aux'2 ) )
     ----------------------------------------------------------------------------------------------------------------------------------------- :: QPointsTo
     N |- *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2 eq *S x . iguard' ; term_aux'1 |- init_t - ct -> term_aux'2
 
@@ -1226,13 +1228,13 @@ defns
     N |- exists Symbol_sym : base_type . res eq exists Symbol_sym : base_type . res'
 
 
-    smt ( N =>  ( term_aux -> term_aux' ) /\ ( term_aux' -> term_aux ) )
+    smt ( N => term_aux <-> term_aux' )
     N |- res eq res'
     -------------------------------------------------------------------- :: Term
     N |- term_aux /\ res eq term_aux' /\ res'
 
 
-    smt ( N => ( term_aux1 -> term_aux2 ) /\ ( term_aux2 -> term_aux1 ) )
+    smt ( N => term_aux1 <-> term_aux2 )
     N |- res11 eq res21
     N |- res21 eq res22
     ----------------------------------------------------------------------------- :: OrdDisj
@@ -1300,19 +1302,20 @@ defns
 
     % can/shoudl this synthesise?
     pt eq term_aux1 |- init_t - array n ct -> term_aux2
-    qpt eq *S x . z_zero =< x /\ x =< n + z_one ; term_aux1 |- init_t - ct -> term_aux2 [ x ]
+    qpt eq *S x . z_zero =< x /\ x =< n - z_one ; term_aux1 |- init_t - ct -> term_aux2 [ x ]
     C ; L ; N ; R |- res_term <= pt
     ----------------------------------------------------------------------------------------- :: Explode
     C ; L ; N ; R |- explode ( res_term : pt ) <= qpt
 
 
+    % issues about init all-or-nothing..?
     % only sound if explode is the ONLY way of creating a qpt?
     % illegal in C otherwise, but should be caught by earlier Cerberus/C-mem-model?
     qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
     pt eq term_aux1' |- init_t - array n ct -> term_aux2'
-    iguard' = ( z_zero =< x /\ x =< n + z_one )
-    C ; L ; N ; R |- res_term <= *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
-    smt ( N => ( iguard -> iguard' ) /\ ( iguard' -> iguard ) /\ ( term_aux1 = term_aux1' ) /\ ( term_aux2 = term_aux2' [ x ] ) )
+    iguard' = ( z_zero =< x /\ x =< n - z_one )
+    C ; L ; N ; R |- res_term <= qpt
+    smt ( N => ( iguard <-> iguard' ) /\ ( term_aux1 = term_aux1' ) /\ ( term_aux2 = term_aux2' [ x ] ) )
     --------------------------------------------------------------------------- :: Implode
     C ; L ; N ; R |- implode ( res_term : qpt , n ) <=  pt
 
@@ -1320,7 +1323,7 @@ defns
     qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
     qpt' eq *S x . iguard' ; term_aux1 |- init_t - ct -> term_aux2
     pt eq term_aux1 + i * size_of ct |- init_t - ct -> [ i / x , cdot ] term2
-    smt ( N , iguard' => x ' <> ' i )
+    smt ( N => ( iguard /\ ( x ' <> ' i ) ) <-> iguard' )
     C ; L ; N ; R |- res_term <= qpt
     -------------------------------------------------------------- :: Break
     C ; L ; N ; R |- break ( res_term : qpt , i ) <= qpt' *s pt
@@ -1329,8 +1332,9 @@ defns
     qpt' eq *S x . iguard' ; term_aux1 |- init_t - ct -> term_aux'2
     pt eq term_aux''1 |- init_t - ct -> term_aux''2
     i eq ( term_aux''1 - term_aux1 ) / size_of ct
-    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> if x = i then term_aux''2 else term_aux'2
-    smt ( N => ( iguard -> ( iguard' \/ x = i ) ) /\ ( ( iguard' \/ x = i ) -> iguard ) )
+    qpt eq *S x . iguard ; term_aux1 |- init_t - ct -> term_aux2
+    smt ( N => term_aux2 = ( if x = i then term_aux''2 else term_aux'2 ) )
+    smt ( N => iguard <-> ( iguard' \/ x = i ) )
     C ; L ; N ; R1 |- res_term1 <= qpt'
     C ; L ; N ; R2 |- res_term2 <= pt
     --------------------------------------------------------------------------------- :: Glue
@@ -2202,7 +2206,7 @@ defns
 
     % ASK (for glue as well?)
     -------------------------------------------------------------------------------- :: Break_Doesnt_Work
-    <( res_pattern1 , res_pattern2 )> = break ( res_term : qpt ) ~> subs1 , subs2
+    <( res_pattern1 , res_pattern2 )> = break ( res_term : qpt , i ) ~> subs1 , subs2
 
 
     res_pattern = res_term ~> subs
